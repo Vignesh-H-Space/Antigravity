@@ -425,3 +425,85 @@ tr:last-child td {
 .view.active {
   display: block;
 }
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(26, 34, 84, 0.5); /* JM Navy with opacity */
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background-color: var(--jm-white);
+  padding: 32px;
+  border-radius: var(--card-radius);
+  width: 450px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--jm-dark-gray);
+}
+
+.close-btn:hover {
+  color: var(--jm-black);
+}
+
+.form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--jm-dark-gray);
+}
+
+.form-group input, .form-group select {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--input-radius);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--jm-dark-blue);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+

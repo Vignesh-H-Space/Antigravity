@@ -108,7 +108,7 @@
             <div class="card" style="grid-column: 1 / 2;">
               <div class="card-header">
                 <h3>Recent Transactions</h3>
-                <a href="#" class="btn btn-secondary">See all</a>
+                <button id="btn-add-transaction" class="btn btn-primary">+ Add Transaction</button>
               </div>
               <div class="table-container">
                 <table>
@@ -154,29 +154,223 @@
 
         </div>
 
-        <!-- Placeholder Views for other Tabs -->
-        <div id="view-transactions" class="view card">
-          <h2>Transactions</h2>
-          <p>Full transaction list and filters will appear here.</p>
+        <!-- Transactions View -->
+        <div id="view-transactions" class="view">
+          <div class="card">
+            <div class="card-header">
+              <h2>All Transactions</h2>
+              <div class="header-search">
+                <input type="text" placeholder="Search by name or ID..." id="search-tx" style="width: 200px;">
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Transaction ID</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="full-transactions-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <div id="view-wallet" class="view card">
-          <h2>Wallet</h2>
-          <p>Card management interface will appear here.</p>
+
+        <!-- Wallet View -->
+        <div id="view-wallet" class="view">
+          <div class="card">
+            <div class="card-header">
+              <h2>My Wallet</h2>
+              <button id="btn-add-card" class="btn btn-primary">+ Add Card</button>
+            </div>
+            <div id="wallet-cards-container" class="dashboard-grid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
         </div>
-        <div id="view-goals" class="view card">
-          <h2>Goals</h2>
-          <p>Savings goals and progress will appear here.</p>
+
+        <!-- Goals View -->
+        <div id="view-goals" class="view">
+          <div class="card">
+            <div class="card-header">
+              <h2>Savings Goals</h2>
+              <button id="btn-add-goal" class="btn btn-primary">+ Add Goal</button>
+            </div>
+            <div id="goals-container" class="widgets-grid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
         </div>
-        <div id="view-analytics" class="view card">
-          <h2>Analytics</h2>
-          <p>Advanced analytics and category breakdowns will appear here.</p>
+
+        <!-- Analytics View -->
+        <div id="view-analytics" class="view">
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header">
+                <h2>Spending Trends</h2>
+              </div>
+              <div class="chart-container">
+                <canvas id="analyticsTrendsChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h2>Category Breakdown</h2>
+              </div>
+              <div class="chart-container">
+                <canvas id="analyticsCategoryChart"></canvas>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="view-reports" class="view card">
-          <h2>Reports</h2>
-          <p>Summary reports and export options will appear here.</p>
+
+        <!-- Reports View -->
+        <div id="view-reports" class="view">
+          <div class="card">
+            <div class="card-header">
+              <h2>Summary Reports</h2>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary">Export to CSV</button>
+                <button class="btn btn-secondary">Export to PDF</button>
+              </div>
+            </div>
+            <div id="reports-container" class="dashboard-grid">
+              <div class="metric-card">
+                <span class="title">Report Period</span>
+                <span class="value">August 2026</span>
+              </div>
+              <div class="metric-card">
+                <span class="title">Total Transactions</span>
+                <span class="value" id="report-tx-count">0</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Add Transaction Modal -->
+  <div id="modal-add-transaction" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Transaction</h2>
+        <span class="close-btn">&times;</span>
+      </div>
+      <form id="form-add-transaction">
+        <div class="form-group">
+          <label for="tx-type">Type</label>
+          <select id="tx-type" required>
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tx-amount">Amount</label>
+          <input type="number" id="tx-amount" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <label for="tx-category">Category</label>
+          <select id="tx-category" required>
+            <option value="Food & Grocery">Food & Grocery</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Salary">Salary</option>
+            <option value="Investment">Investment</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tx-name">Recipient / Source</label>
+          <input type="text" id="tx-name" required>
+        </div>
+        <div class="form-group">
+          <label for="tx-date">Date</label>
+          <input type="date" id="tx-date" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Card Modal -->
+  <div id="modal-add-card" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Card</h2>
+        <span class="close-btn">&times;</span>
+      </div>
+      <form id="form-add-card">
+        <div class="form-group">
+          <label for="card-type">Card Network</label>
+          <select id="card-type" required>
+            <option value="VISA">Visa</option>
+            <option value="Mastercard">Mastercard</option>
+            <option value="Amex">American Express</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="card-number">Card Number</label>
+          <input type="text" id="card-number" placeholder="**** **** **** 1234" required maxlength="19">
+        </div>
+        <div class="form-group">
+          <label for="card-holder">Cardholder Name</label>
+          <input type="text" id="card-holder" required>
+        </div>
+        <div class="form-group">
+          <label for="card-expiry">Expiry Date (MM/YY)</label>
+          <input type="text" id="card-expiry" placeholder="12/26" required maxlength="5">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Card</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Goal Modal -->
+  <div id="modal-add-goal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Goal</h2>
+        <span class="close-btn">&times;</span>
+      </div>
+      <form id="form-add-goal">
+        <div class="form-group">
+          <label for="goal-name">Goal Name</label>
+          <input type="text" id="goal-name" placeholder="e.g. New Car, Vacation" required>
+        </div>
+        <div class="form-group">
+          <label for="goal-target">Target Amount</label>
+          <input type="number" id="goal-target" step="0.01" min="1" required>
+        </div>
+        <div class="form-group">
+          <label for="goal-current">Current Amount Saved</label>
+          <input type="number" id="goal-current" step="0.01" min="0" value="0" required>
+        </div>
+        <div class="form-group">
+          <label for="goal-date">Target Date</label>
+          <input type="date" id="goal-date" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Goal</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Application Logic -->

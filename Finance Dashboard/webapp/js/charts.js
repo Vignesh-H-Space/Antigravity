@@ -120,6 +120,50 @@ const Charts = {
         }
       }]
     });
+  },
+
+  renderAnalyticsCharts() {
+    const ctxTrends = document.getElementById('analyticsTrendsChart');
+    const ctxCategory = document.getElementById('analyticsCategoryChart');
+    
+    if (ctxTrends) {
+      new Chart(ctxTrends.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+          datasets: [{
+            label: 'Spending',
+            data: [1200, 1900, 800, 1500],
+            borderColor: '#2E3A8C',
+            backgroundColor: 'rgba(46, 58, 140, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    if (ctxCategory) {
+      new Chart(ctxCategory.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Other'],
+          datasets: [{
+            label: 'Amount ($)',
+            data: [800, 300, 200, 450, 150],
+            backgroundColor: '#4A5FD9'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
   }
 };
 

@@ -76,6 +76,37 @@ class DataStore {
   getUser() {
     return this.data.user;
   }
+
+  addTransaction(transaction) {
+    transaction.id = 'TX' + Math.floor(Math.random() * 100000).toString();
+    transaction.status = 'completed';
+    this.data.transactions.unshift(transaction);
+    this.saveData();
+    
+    if (transaction.type === 'expense') {
+      const budget = this.data.budgets.find(b => b.category === transaction.category);
+      if (budget) {
+        budget.spentAmount += transaction.amount;
+        this.saveData();
+      }
+    }
+  }
+
+  addCard(card) {
+    card.id = 'C' + Math.floor(Math.random() * 100000).toString();
+    this.data.cards.push(card);
+    this.saveData();
+  }
+
+  getGoals() {
+    return this.data.goals;
+  }
+
+  addGoal(goal) {
+    goal.id = 'G' + Math.floor(Math.random() * 100000).toString();
+    this.data.goals.push(goal);
+    this.saveData();
+  }
 }
 
 window.DataStore = new DataStore();
