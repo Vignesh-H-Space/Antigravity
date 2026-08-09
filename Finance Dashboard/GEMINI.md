@@ -1,69 +1,440 @@
-# Agent Instructions
+# System Instructions: Personal Finance Dashboard
 
-> This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
+## Project Overview
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
+Build a **personal finance dashboard** for tracking income, expenses, savings, and budget. The app allows users to monitor their financial health, view transaction history, manage cards, and track spending against budget limits.
 
-## The 3-Layer Architecture
+---
 
-**Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+## Navigation Structure
 
-**Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+### Top Navigation Tabs
+- Dashboard (home/default view)
+- Transactions
+- Wallet
+- Goals
+- Analytics
+- Reports
 
-**Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work. Commented well.
+### Header Elements
+- Dark/Light mode toggle
+- Settings
+- Search
+- Notifications
+- User profile with name and avatar
 
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+---
 
-## Operating Principles
+## Dashboard Page
 
-**1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+### Key Metrics Section (4 Cards)
 
-**2. Self-anneal when things break**
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+**Card 1: Total Balance**
+- Display current total balance
+- Show percentage change from last month
+- Indicate if change is positive or negative
 
-**3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+**Card 2: Income**
+- Display total income for current month
+- Show percentage change from last month
 
-## Self-annealing loop
+**Card 3: Expense**
+- Display total expenses for current month
+- Show percentage change from last month
 
-Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
+**Card 4: Total Savings**
+- Display total savings (income minus expenses)
+- Show percentage change from last month
 
-## File Organization
+### Total Income Chart
+- Bar chart showing monthly income
+- Time period selector (dropdown): This month, Last 3 months, Last 6 months, This year
+- Split data into two categories: Fixed income and Variable income
+- Display months on X-axis (Jan - Dec)
+- Display amounts on Y-axis
+- Include legend for Fixed vs Variable
 
-**Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
+### Budget Chart
+- Donut/pie chart showing budget allocation and spending
+- Display total budget amount in center
+- Display amount spent in center
+- Break down by categories:
+  - Investment
+  - Travelling
+  - Food & Grocery
+  - Entertainment
+  - Healthcare
+- Time period selector: This month, Last month, This year
+- Include legend with category names
 
-**Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
+### Recent Transactions Table
+- Filter dropdown: This week, This month, All
+- "See all" link to full transactions page
+- Table columns:
+  - Name (with avatar showing initials)
+  - Transaction ID
+  - Status (Completed, Pending, Failed)
+  - Date and time
+  - Amount (positive or negative)
+- Show 5-10 most recent transactions
 
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
+### Spending Limits Widget
+- Display monthly payment/spending limit
+- Show current amount spent
+- Show limit amount
+- Progress bar indicating usage percentage
+
+### My Cards Widget
+- Display saved payment cards
+- "Add card" button
+- Card preview showing:
+  - Card network logo (Visa, Mastercard, etc.)
+  - Masked card number (show last 4 digits)
+  - Cardholder name
+  - Expiry date
+  - Contactless payment indicator
+
+---
+
+## Transactions Page
+
+### Features
+- Full list of all transactions
+- Search by name, ID, or notes
+- Filter by:
+  - Transaction type (Income / Expense / All)
+  - Category
+  - Status (Completed / Pending / Failed)
+  - Date range (custom date picker)
+- Sort by: Date, Amount, Name
+- Pagination or infinite scroll
+
+### Transaction List Display
+- Avatar with initials
+- Recipient/source name
+- Transaction ID
+- Category
+- Status badge
+- Date and time
+- Amount (show + for income, - for expense)
+
+### Add Transaction
+- Button to add new transaction
+- Form fields:
+  - Type: Income or Expense
+  - Amount
+  - Category (dropdown)
+  - Recipient/Source name
+  - Date (default to today)
+  - Notes (optional)
+- Save and Cancel buttons
+
+### Edit/Delete Transaction
+- Edit existing transactions
+- Delete with confirmation
+
+---
+
+## Wallet Page
+
+### My Cards Section
+- List all saved cards
+- Add new card button
+- Each card displays:
+  - Card network (Visa, Mastercard, Amex)
+  - Masked card number
+  - Cardholder name
+  - Expiry date
+- Edit card details
+- Delete card with confirmation
+
+### Add Card Form
+- Card number input
+- Cardholder name
+- Expiry date (MM/YY)
+- Card nickname (optional)
+- Save and Cancel buttons
+
+---
+
+## Goals Page
+
+### Savings Goals
+- List of financial goals
+- Add new goal button
+
+### Goal Details
+- Goal name (e.g., "Emergency Fund", "Vacation", "New Car")
+- Target amount
+- Current amount saved
+- Progress percentage
+- Target date/deadline
+- Contribution history
+
+### Add/Edit Goal Form
+- Goal name
+- Target amount
+- Target date
+- Initial deposit (optional)
+- Save and Cancel buttons
+
+### Goal Actions
+- Add money to goal
+- Edit goal
+- Delete goal
+- Mark as complete
+
+---
+
+## Analytics Page
+
+### Spending Trends
+- Line chart showing spending over time
+- Time period selector: Weekly, Monthly, Yearly
+- Compare current period to previous period
+
+### Category Breakdown
+- Bar chart or pie chart showing spending by category
+- Rank categories by amount spent
+- Show percentage of total for each category
+
+### Income vs Expenses
+- Side-by-side or stacked bar chart
+- Monthly comparison
+- Show net savings per month
+
+### Top Expenses
+- List of highest individual expenses
+- Filter by time period
+
+---
+
+## Reports Page
+
+### Monthly Summary Report
+- Select month and year
+- Display:
+  - Total income
+  - Total expenses
+  - Net savings
+  - Top spending categories
+  - Number of transactions
+
+### Yearly Summary Report
+- Select year
+- Month-by-month breakdown
+- Annual totals
+- Year-over-year comparison
+
+### Export Options
+- Export to CSV
+- Export to PDF
+- Select date range for export
+
+---
+
+## Data Model
+
+### User
+```json
+{
+  "id": "string",
+  "name": "string",
+  "email": "string",
+  "avatar": "string | null",
+  "currency": "string (USD, EUR, etc.)",
+  "monthlySpendingLimit": "number",
+  "createdAt": "timestamp"
+}
+```
+
+### Transaction
+```json
+{
+  "id": "string",
+  "type": "income | expense",
+  "amount": "number",
+  "category": "string",
+  "recipientName": "string",
+  "status": "completed | pending | failed",
+  "date": "timestamp",
+  "notes": "string | null",
+  "createdAt": "timestamp"
+}
+```
+
+### Category
+```json
+{
+  "id": "string",
+  "name": "string",
+  "type": "income | expense | budget",
+  "icon": "string"
+}
+```
+
+### Card
+```json
+{
+  "id": "string",
+  "cardNumber": "string (masked, store only last 4)",
+  "cardholderName": "string",
+  "expiryDate": "string (MM/YY)",
+  "cardType": "visa | mastercard | amex | other",
+  "nickname": "string | null",
+  "createdAt": "timestamp"
+}
+```
+
+### Goal
+```json
+{
+  "id": "string",
+  "name": "string",
+  "targetAmount": "number",
+  "currentAmount": "number",
+  "targetDate": "timestamp",
+  "createdAt": "timestamp"
+}
+```
+
+### Budget
+```json
+{
+  "id": "string",
+  "category": "string",
+  "allocatedAmount": "number",
+  "spentAmount": "number",
+  "month": "string (YYYY-MM)"
+}
+```
+
+---
+
+## Default Categories
+
+### Expense Categories
+- Food & Grocery
+- Transportation
+- Entertainment
+- Healthcare
+- Shopping
+- Bills & Utilities
+- Travel
+- Education
+- Subscriptions
+- Other
+
+### Income Categories
+- Salary
+- Freelance
+- Investments
+- Rental Income
+- Gifts
+- Refunds
+- Other
+
+### Budget Categories
+- Investment
+- Travelling
+- Food & Grocery
+- Entertainment
+- Healthcare
+
+---
+
+## Core Functionalities
+
+### Transaction Management
+- Create new income/expense transactions
+- Edit existing transactions
+- Delete transactions
+- View transaction history with filters and search
+- Categorize transactions
+
+### Balance Calculation
+- Automatically calculate total balance from all transactions
+- Calculate monthly income (sum of income transactions)
+- Calculate monthly expenses (sum of expense transactions)
+- Calculate savings (income - expenses)
+- Calculate percentage changes month-over-month
+
+### Budget Tracking
+- Set monthly spending limit
+- Track spending against limit
+- Allocate budget to categories
+- Show remaining budget per category
+
+### Card Management
+- Add payment cards (display only, not functional payments)
+- Edit card details
+- Delete cards
+- Display masked card numbers for security
+
+### Goals Management
+- Create savings goals
+- Track progress toward goals
+- Add contributions to goals
+- Edit and delete goals
+
+### Analytics & Reporting
+- Generate spending breakdowns by category
+- Show income vs expense trends
+- Provide monthly and yearly summaries
+- Export data to CSV or PDF
+
+---
+
+## Features for MVP
+
+- Dashboard with key metrics (Balance, Income, Expense, Savings)
+- Income bar chart (Fixed vs Variable)
+- Budget donut chart by category
+- Recent transactions table
+- Spending limit tracker
+- Card display widget
+- Add/edit/delete transactions
+- Transaction history with filters
+- Basic analytics charts
+- Local data storage
+
+## Features to Exclude from MVP
+
+- Bank account sync / Plaid integration
+- Real payment processing
+- Multi-user / shared accounts
+- Notifications and reminders
+- Receipt scanning / OCR
+- Cloud sync and backup
+- Currency conversion
+- Investment portfolio tracking
+
+---
+
+## Technical Requirements
+
+### Data Storage
+- Persist all data locally (localStorage or IndexedDB)
+- Data should survive browser refresh
+- Structure data for potential future cloud migration
+
+### Charts
+- Interactive charts with tooltips
+- Responsive sizing
+- Time period filtering
+
+### Forms
+- Input validation on all forms
+- Error messages for invalid inputs
+- Confirmation dialogs for delete actions
+
+### Performance
+- Fast load times
+- Smooth interactions
+- Handle 1000+ transactions without lag
+
+---
 
 ## Summary
 
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
+Build a personal finance dashboard with the following core features: financial overview with key metrics, income and budget charts, transaction management, card display, spending limits, savings goals, and basic analytics. Focus on clean organization and intuitive functionality. All data stored locally.
