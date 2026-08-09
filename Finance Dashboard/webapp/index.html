@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JM Solutionss | Finance Dashboard</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <h2>JM Solutionss</h2>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item active" data-target="view-dashboard">Dashboard</li>
+        <li class="nav-item" data-target="view-transactions">Transactions</li>
+        <li class="nav-item" data-target="view-wallet">Wallet</li>
+        <li class="nav-item" data-target="view-goals">Goals</li>
+        <li class="nav-item" data-target="view-analytics">Analytics</li>
+        <li class="nav-item" data-target="view-reports">Reports</li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-search">
+          <input type="text" placeholder="Search transactions, goals...">
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" title="Toggle Theme">🌓</button>
+          <button class="icon-btn" title="Settings">⚙️</button>
+          <button class="icon-btn" title="Notifications">🔔</button>
+          <div class="user-profile">
+            <div class="avatar">JD</div>
+            <strong>Jane Doe</strong>
+          </div>
+        </div>
+      </header>
+
+      <!-- Views Container -->
+      <div class="view-container">
+        
+        <!-- Dashboard View -->
+        <div id="view-dashboard" class="view active">
+          
+          <div class="dashboard-grid">
+            <div class="card metric-card">
+              <span class="title">Total Balance</span>
+              <span class="value" id="metric-balance">$0.00</span>
+              <span class="trend positive">↗ 12.5% vs last month</span>
+            </div>
+            <div class="card metric-card">
+              <span class="title">Income</span>
+              <span class="value" id="metric-income">$0.00</span>
+              <span class="trend positive">↗ 4.2% vs last month</span>
+            </div>
+            <div class="card metric-card">
+              <span class="title">Expense</span>
+              <span class="value" id="metric-expense">$0.00</span>
+              <span class="trend negative">↘ -2.1% vs last month</span>
+            </div>
+            <div class="card metric-card">
+              <span class="title">Total Savings</span>
+              <span class="value" id="metric-savings">$0.00</span>
+              <span class="trend positive">↗ 8.3% vs last month</span>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>Total Income</h3>
+                <select class="btn btn-secondary">
+                  <option>This Year</option>
+                  <option>This Month</option>
+                </select>
+              </div>
+              <div class="chart-container">
+                <canvas id="incomeChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h3>Budget</h3>
+              </div>
+              <div class="chart-container">
+                <canvas id="budgetChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="card" style="grid-column: 1 / 2;">
+              <div class="card-header">
+                <h3>Recent Transactions</h3>
+                <a href="#" class="btn btn-secondary">See all</a>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Transaction ID</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="transactions-body">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="widgets-grid" style="display: flex; flex-direction: column; gap: 24px;">
+              <div class="card">
+                <div class="card-header">
+                  <h3>Spending Limits</h3>
+                </div>
+                <div class="progress-info">
+                  <span id="spending-limit-label" class="caption">0 of 0 Spent</span>
+                  <div class="progress-container">
+                    <div id="spending-limit-bar" class="progress-bar" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <h3>My Cards</h3>
+                  <button class="btn btn-secondary">+ Add Card</button>
+                </div>
+                <div id="cards-widget-container">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Placeholder Views for other Tabs -->
+        <div id="view-transactions" class="view card">
+          <h2>Transactions</h2>
+          <p>Full transaction list and filters will appear here.</p>
+        </div>
+        <div id="view-wallet" class="view card">
+          <h2>Wallet</h2>
+          <p>Card management interface will appear here.</p>
+        </div>
+        <div id="view-goals" class="view card">
+          <h2>Goals</h2>
+          <p>Savings goals and progress will appear here.</p>
+        </div>
+        <div id="view-analytics" class="view card">
+          <h2>Analytics</h2>
+          <p>Advanced analytics and category breakdowns will appear here.</p>
+        </div>
+        <div id="view-reports" class="view card">
+          <h2>Reports</h2>
+          <p>Summary reports and export options will appear here.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="js/dataStore.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
