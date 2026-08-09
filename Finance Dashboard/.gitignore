@@ -1,0 +1,29 @@
+# Intermediate processing files (always regenerated)
+.tmp/
+!.tmp/.gitkeep
+
+# Environment and sensitive keys
+.env
+credentials.json
+token.json
+
+# Python environment and bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+ENV/
+
+# Node modules / build output (if frontend app added)
+node_modules/
+dist/
+.next/
+
+# System / IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
