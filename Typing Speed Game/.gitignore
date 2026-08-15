@@ -1,0 +1,17 @@
+# Environment files
+.env
+.env.local
+
+# Temporary processing files
+.tmp/
+*.tmp
+*.log
+
+# Dependencies
+node_modules/
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
