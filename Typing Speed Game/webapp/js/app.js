@@ -174,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // Window Resize
+    window.addEventListener('resize', updateCaretPosition);
+
     // Modals
     closeModalBtn.addEventListener('click', closeModals);
     statsHistoryBtn.addEventListener('click', showHistoryModal);
@@ -288,7 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     generateText();
     renderWords();
-    updateCaretPosition();
+    wordsContainer.style.transform = 'translateY(0px)';
+    requestAnimationFrame(updateCaretPosition);
     clearKeyHighlights();
   }
 
@@ -442,19 +446,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentWordSpan = wordSpans[currentWordIndex];
     if (!currentWordSpan) return;
 
+    const wrapperRect = wordsWrapper.getBoundingClientRect();
     const charSpans = currentWordSpan.querySelectorAll('.char');
-    let targetElement = null;
 
     if (currentCharIndex < charSpans.length) {
-      targetElement = charSpans[currentCharIndex];
-      caret.style.left = `${targetElement.offsetLeft}px`;
-      caret.style.top = `${targetElement.offsetTop}px`;
+      const targetElement = charSpans[currentCharIndex];
+      const targetRect = targetElement.getBoundingClientRect();
+      caret.style.left = `${targetRect.left - wrapperRect.left}px`;
+      caret.style.top = `${targetRect.top - wrapperRect.top}px`;
     } else {
       // Caret at end of current word
       const lastChar = charSpans[charSpans.length - 1];
       if (lastChar) {
-        caret.style.left = `${lastChar.offsetLeft + lastChar.offsetWidth}px`;
-        caret.style.top = `${lastChar.offsetTop}px`;
+        const lastRect = lastChar.getBoundingClientRect();
+        caret.style.left = `${lastRect.right - wrapperRect.left}px`;
+        caret.style.top = `${lastRect.top - wrapperRect.top}px`;
       }
     }
   }
