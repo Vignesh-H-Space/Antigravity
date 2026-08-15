@@ -193,50 +193,47 @@ window.WORD_BANKS = {
   "shadow",
   "future"
 ],
-  code: [
-  "const calculateWPM = (chars, timeInSec) => Math.round((chars / 5) / (timeInSec / 60));",
-  "function debounce(func, wait) { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; }",
-  "const numbers = [1, 2, 3, 4, 5]; const doubled = numbers.map(n => n * 2);",
-  "async function fetchData(url) { const res = await fetch(url); return await res.json(); }",
-  "document.addEventListener('keydown', (e) => { if (e.key === 'Tab') e.preventDefault(); });",
-  "import React, { useState, useEffect } from 'react';",
-  "export default function App() { return <div className='container'>Hello World</div>; }",
-  "for (let i = 0; i < array.length; i++) { console.log(array[i]); }",
-  "const isEven = (num) => num % 2 === 0;",
-  "try { await processQueue(); } catch (err) { console.error('Queue failed:', err); }"
-],
-  quotes: [
-  {
-    "quote": "Do not go where the path may lead, go instead where there is no path and leave a trail.",
-    "author": "Ralph Waldo Emerson"
-  },
-  {
-    "quote": "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
-    "author": "Steve Jobs"
-  },
-  {
-    "quote": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-    "author": "Winston Churchill"
-  },
-  {
-    "quote": "In the middle of difficulty lies opportunity.",
-    "author": "Albert Einstein"
-  },
-  {
-    "quote": "It is during our darkest moments that we must focus to see the light.",
-    "author": "Aristotle"
-  },
-  {
-    "quote": "Believe you can and you're halfway there.",
-    "author": "Theodore Roosevelt"
-  },
-  {
-    "quote": "Code is like humor. When you have to explain it, it's bad.",
-    "author": "Cory House"
-  },
-  {
-    "quote": "Simplicity is the soul of efficiency.",
-    "author": "Austin Freeman"
-  }
-]
+  code: {
+  "short": [
+    "const add = (a, b) => a + b;",
+    "const isEven = (num) => num % 2 === 0;",
+    "let [x, y] = [10, 20];",
+    "console.log('CyberType Speed Engine');",
+    "const numbers = [1, 2, 3, 4, 5];",
+    "return items.filter(Boolean);"
+  ],
+  "medium": [
+    "const calculateWPM = (chars, timeInSec) => Math.round((chars / 5) / (timeInSec / 60));",
+    "const doubled = numbers.map(n => n * 2);",
+    "async function fetchData(url) { const res = await fetch(url); return await res.json(); }",
+    "document.addEventListener('keydown', (e) => { if (e.key === 'Tab') e.preventDefault(); });",
+    "import React, { useState, useEffect } from 'react';",
+    "for (let i = 0; i < array.length; i++) { console.log(array[i]); }"
+  ],
+  "long": [
+    "function debounce(func, wait) { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; }",
+    "export default function App() { const [count, setCount] = useState(0); return <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>; }",
+    "try { const result = await processQueue(); return { status: 'success', data: result }; } catch (err) { console.error('Queue execution failed:', err); }"
+  ]
+},
+  quotes: {
+  "short": [
+    "In the middle of difficulty lies opportunity.",
+    "Simplicity is the soul of efficiency.",
+    "Believe you can and you're halfway there.",
+    "Knowledge is power.",
+    "Stay hungry, stay foolish."
+  ],
+  "medium": [
+    "Do not go where the path may lead, go instead where there is no path and leave a trail.",
+    "It is during our darkest moments that we must focus to see the light.",
+    "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "Code is like humor. When you have to explain it, it's bad."
+  ],
+  "long": [
+    "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
+    "Your time is limited, so don't waste it living someone else's life. Don't be trapped by dogma which is living with the results of other people's thinking.",
+    "What lies behind us and what lies before us are tiny matters compared to what lies within us."
+  ]
+}
 };
