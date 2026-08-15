@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Virtual Keyboard Layout definition
   const keyboardRows = [
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'backspace'],
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
     ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
     ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
@@ -101,14 +102,51 @@ document.addEventListener('DOMContentLoaded', () => {
           keyDiv.classList.add('space');
           keyDiv.textContent = 'space';
           keyDiv.dataset.key = ' ';
+        } else if (k === 'backspace') {
+          keyDiv.classList.add('wide');
+          keyDiv.textContent = '⌫ back';
+          keyDiv.dataset.key = 'backspace';
         } else {
           keyDiv.textContent = k;
           keyDiv.dataset.key = k;
         }
+
+        // Click / Touch Interactivity
+        keyDiv.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          handleVirtualKeyClick(k);
+        });
+
         rowDiv.appendChild(keyDiv);
       });
       virtualKeyboard.appendChild(rowDiv);
     });
+  }
+
+  function handleVirtualKeyClick(keyVal) {
+    if (isTestFinished) return;
+    typingInput.focus();
+
+    highlightVirtualKey(keyVal === 'space' ? ' ' : keyVal);
+
+    if (keyVal === 'backspace') {
+      if (typingInput.value.length > 0) {
+        typingInput.value = typingInput.value.slice(0, -1);
+        handleTypingInput();
+        window.keyAudio.playClick(false, false);
+      }
+      return;
+    }
+
+    const charTyped = keyVal === 'space' ? ' ' : keyVal;
+
+    // Trigger keydown logic (audio, stats tally, spacebar advance)
+    handleKeyDown({ key: charTyped });
+
+    if (charTyped !== ' ') {
+      typingInput.value += charTyped;
+      handleTypingInput();
+    }
   }
 
   function setupEventListeners() {

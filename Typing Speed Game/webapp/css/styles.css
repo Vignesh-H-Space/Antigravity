@@ -504,29 +504,40 @@ kbd {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 600;
-  min-width: 36px;
-  height: 38px;
+  min-width: 38px;
+  height: 42px;
   display: flex;
   justify-content: center;
   align-items: center;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.08s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.1s ease;
+}
+
+.key:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-active);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 12px var(--glow-color);
+  transform: translateY(-2px);
+}
+
+.key:active, .key.active {
+  background: var(--accent-color);
+  color: #000;
+  box-shadow: 0 0 16px var(--glow-color);
+  transform: translateY(2px);
 }
 
 .key.space {
-  min-width: 220px;
+  min-width: 240px;
 }
 
 .key.wide {
-  min-width: 60px;
-}
-
-.key.active {
-  background: var(--accent-color);
-  color: #000;
-  box-shadow: 0 0 12px var(--glow-color);
-  transform: translateY(2px);
+  min-width: 70px;
+  font-size: 0.75rem;
 }
 
 .key.error {
