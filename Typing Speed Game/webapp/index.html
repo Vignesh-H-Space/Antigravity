@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyberpunk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberType | Next-Gen Speed Typing & Analytics</title>
+  <meta name="description" content="Master typing speed with CyberType: real-time WPM, keystroke heatmaps, sound synthesis, and rich visual analytics.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navigation / Header -->
+    <header class="main-header">
+      <div class="logo">
+        <i class="fa-solid fa-keyboard logo-icon"></i>
+        <span class="logo-text">Cyber<span class="highlight">Type</span></span>
+      </div>
+
+      <nav class="nav-controls">
+        <!-- Audio Synth Toggle -->
+        <button id="audio-toggle-btn" class="icon-btn" title="Keyboard Sound (Clicky, Tactile, Linear, Typewriter, Off)">
+          <i class="fa-solid fa-volume-high"></i>
+          <span id="audio-label">Clicky</span>
+        </button>
+
+        <!-- Theme Selector -->
+        <div class="theme-dropdown-container">
+          <button id="theme-btn" class="icon-btn" title="Change Theme">
+            <i class="fa-solid fa-palette"></i>
+            <span id="current-theme-name">Cyberpunk</span>
+          </button>
+          <div id="theme-menu" class="theme-menu hidden">
+            <div class="theme-option active" data-theme-id="cyberpunk"><span class="color-dot cyberpunk"></span> Cyberpunk</div>
+            <div class="theme-option" data-theme-id="nord"><span class="color-dot nord"></span> Nord Dark</div>
+            <div class="theme-option" data-theme-id="dracula"><span class="color-dot dracula"></span> Dracula</div>
+            <div class="theme-option" data-theme-id="emerald"><span class="color-dot emerald"></span> Emerald Synth</div>
+            <div class="theme-option" data-theme-id="sunset"><span class="color-dot sunset"></span> Sunset Glow</div>
+            <div class="theme-option" data-theme-id="oled"><span class="color-dot oled"></span> Midnight OLED</div>
+          </div>
+        </div>
+
+        <button id="stats-history-btn" class="icon-btn" title="Personal History">
+          <i class="fa-solid fa-trophy"></i>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Sub Header: Configuration Bar -->
+    <section class="config-bar">
+      <!-- Mode Selector -->
+      <div class="config-group">
+        <button class="mode-btn active" data-mode="time"><i class="fa-regular fa-clock"></i> Time</button>
+        <button class="mode-btn" data-mode="words"><i class="fa-solid fa-font"></i> Words</button>
+        <button class="mode-btn" data-mode="quote"><i class="fa-solid fa-quote-left"></i> Quote</button>
+        <button class="mode-btn" data-mode="code"><i class="fa-solid fa-code"></i> Code</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Mode Options Sub-bar -->
+      <div id="mode-options-container" class="config-group options-group">
+        <!-- Rendered dynamically (e.g. 15, 30, 60, 120 sec or 10, 25, 50, 100 words) -->
+        <button class="option-btn active" data-value="30">30</button>
+        <button class="option-btn" data-value="60">60</button>
+        <button class="option-btn" data-value="120">120</button>
+      </div>
+    </section>
+
+    <!-- Main Typing Test Interface -->
+    <main class="test-area">
+      <!-- Live Metrics Dashboard Header -->
+      <div class="live-metrics">
+        <div class="metric-item">
+          <span class="metric-label" id="counter-label">Time</span>
+          <span class="metric-value" id="live-timer">30s</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">WPM</span>
+          <span class="metric-value accent" id="live-wpm">0</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Accuracy</span>
+          <span class="metric-value" id="live-accuracy">100%</span>
+        </div>
+      </div>
+
+      <!-- Text Container Box -->
+      <div id="words-wrapper" class="words-wrapper" tabindex="0">
+        <input type="text" id="typing-input" class="hidden-input" autocomplete="off" capitalize="off" spellcheck="false">
+        <div id="words-container" class="words-container">
+          <!-- Text spans injected dynamically by JS -->
+        </div>
+        <div id="caret" class="caret smooth-caret"></div>
+      </div>
+
+      <!-- Test Control Actions -->
+      <div class="test-controls">
+        <button id="restart-btn" class="action-btn" title="Restart Test (Tab + Enter)">
+          <i class="fa-solid fa-rotate-right"></i> Restart
+        </button>
+        <span class="hint-text"><kbd>Tab</kbd> + <kbd>Enter</kbd> to quick restart</span>
+      </div>
+    </main>
+
+    <!-- Interactive Virtual Keyboard Layout -->
+    <section class="keyboard-section">
+      <div id="keyboard" class="virtual-keyboard">
+        <!-- Keys injected by JS -->
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <p>CyberType Agentic Speed Platform &bull; Built with 3-Layer System Architecture</p>
+    </footer>
+  </div>
+
+  <!-- Results Modal -->
+  <div id="results-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-chart-line"></i> Performance Dashboard</h2>
+        <button id="close-modal-btn" class="close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Main Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card primary">
+            <span class="stat-title">Net WPM</span>
+            <span class="stat-big" id="result-wpm">--</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Accuracy</span>
+            <span class="stat-big" id="result-accuracy">--%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Raw WPM</span>
+            <span class="stat-medium" id="result-raw">--</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Characters</span>
+            <span class="stat-medium" id="result-chars">0/0/0/0</span>
+            <span class="stat-sub">correct / error / extra / missed</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Consistency</span>
+            <span class="stat-medium" id="result-consistency">--%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-title">Time</span>
+            <span class="stat-medium" id="result-time">0s</span>
+          </div>
+        </div>
+
+        <!-- WPM Chart Canvas -->
+        <div class="chart-container">
+          <h3>Speed Timeline (WPM vs Raw)</h3>
+          <canvas id="wpm-chart" width="700" height="220"></canvas>
+        </div>
+
+        <!-- Key Accuracy Heatmap / Weakest Keys -->
+        <div class="weak-keys-container">
+          <h3>Keystroke Precision</h3>
+          <div id="weak-keys-list" class="weak-keys-list">
+            <!-- Heatmap items injected dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modal-next-btn" class="primary-btn"><i class="fa-solid fa-forward"></i> Next Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History / Personal Bests Modal -->
+  <div id="history-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-trophy"></i> Personal Records & History</h2>
+        <button id="close-history-btn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="pb-records-grid">
+          <div class="pb-card">
+            <span class="pb-label">Best 15s WPM</span>
+            <span class="pb-value" id="pb-15s">0</span>
+          </div>
+          <div class="pb-card">
+            <span class="pb-label">Best 30s WPM</span>
+            <span class="pb-value" id="pb-30s">0</span>
+          </div>
+          <div class="pb-card">
+            <span class="pb-label">Best 60s WPM</span>
+            <span class="pb-value" id="pb-60s">0</span>
+          </div>
+        </div>
+
+        <h3 class="history-title">Recent Tests</h3>
+        <div id="history-table-wrapper" class="history-table-wrapper">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>WPM</th>
+                <th>Accuracy</th>
+                <th>Consistency</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="history-rows">
+              <!-- History rows injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/words.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
