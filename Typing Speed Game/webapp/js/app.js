@@ -190,20 +190,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentMode === 'time') {
       options = [15, 30, 60, 120];
       counterLabel.textContent = 'Time';
-      modeSetting = 30;
+      if (!options.includes(modeSetting)) modeSetting = 30;
     } else if (currentMode === 'words') {
       options = [10, 25, 50, 100];
       counterLabel.textContent = 'Words';
-      modeSetting = 25;
+      if (!options.includes(modeSetting)) modeSetting = 25;
     } else if (currentMode === 'quote' || currentMode === 'code') {
       options = ['short', 'medium', 'long'];
-      counterLabel.textContent = 'Mode';
-      modeSetting = 'medium';
+      counterLabel.textContent = currentMode === 'quote' ? 'Quote' : 'Code';
+      if (!options.includes(modeSetting)) modeSetting = 'medium';
     }
 
-    options.forEach((opt, idx) => {
+    options.forEach((opt) => {
       const btn = document.createElement('button');
-      btn.className = `option-btn ${idx === (currentMode === 'quote' || currentMode === 'code' ? 1 : 1) ? 'active' : ''}`;
+      btn.className = `option-btn ${opt === modeSetting ? 'active' : ''}`;
       btn.dataset.value = opt;
       btn.textContent = typeof opt === 'number' ? (currentMode === 'time' ? `${opt}s` : opt) : opt;
 
@@ -223,17 +223,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (currentMode === 'time' || currentMode === 'words') {
       const list = bank.standard || ['the', 'quick', 'brown', 'fox', 'jumps', 'over', 'the', 'lazy', 'dog'];
-      const count = currentMode === 'words' ? modeSetting : 100;
+      const count = currentMode === 'words' ? parseInt(modeSetting, 10) : 100;
       for (let i = 0; i < count; i++) {
         words.push(list[Math.floor(Math.random() * list.length)]);
       }
     } else if (currentMode === 'quote') {
-      const quotes = bank.quotes || [{ quote: "The only limit to our realization of tomorrow will be our doubts of today." }];
-      const q = quotes[Math.floor(Math.random() * quotes.length)].quote;
+      const quotesCategory = (bank.quotes && bank.quotes[modeSetting]) ? bank.quotes[modeSetting] : [
+        "In the middle of difficulty lies opportunity."
+      ];
+      const q = quotesCategory[Math.floor(Math.random() * quotesCategory.length)];
       words = q.split(' ');
     } else if (currentMode === 'code') {
-      const codeList = bank.code || ["const wpm = (chars / 5) / (time / 60);"];
-      const codeSnippet = codeList[Math.floor(Math.random() * codeList.length)];
+      const codeCategory = (bank.code && bank.code[modeSetting]) ? bank.code[modeSetting] : [
+        "const calculateWPM = (chars, time) => Math.round((chars / 5) / (time / 60));"
+      ];
+      const codeSnippet = codeCategory[Math.floor(Math.random() * codeCategory.length)];
       words = codeSnippet.split(' ');
     }
 
@@ -277,20 +281,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     typingInput.value = '';
 
+    generateText();
+    renderWords();
+
     if (currentMode === 'time') {
-      timeRemaining = modeSetting;
+      timeRemaining = parseInt(modeSetting, 10);
       liveTimer.textContent = `${timeRemaining}s`;
-    } else if (currentMode === 'words') {
-      liveTimer.textContent = `0/${modeSetting}`;
     } else {
-      liveTimer.textContent = `--`;
+      liveTimer.textContent = `0/${targetWords.length}`;
     }
 
     liveWpm.textContent = '0';
     liveAccuracy.textContent = '100%';
 
-    generateText();
-    renderWords();
     wordsContainer.style.transform = 'translateY(0px)';
     requestAnimationFrame(updateCaretPosition);
     clearKeyHighlights();
@@ -372,6 +375,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     currentCharIndex = currentVal.length;
+
+    // Auto finish if typing final character of the final word
+    if (currentWordIndex === targetWords.length - 1 && currentVal === currentWordStr) {
+      finishTest();
+      return;
+    }
+
     updateCaretPosition();
     updateLiveMetrics();
   }
@@ -413,8 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
       typingInput.value = '';
       currentCharIndex = 0;
 
-      if (currentMode === 'words') {
-        liveTimer.textContent = `${currentWordIndex}/${modeSetting}`;
+      if (currentMode !== 'time') {
+        liveTimer.textContent = `${currentWordIndex}/${targetWords.length}`;
       }
 
       if (currentWordIndex >= targetWords.length) {
