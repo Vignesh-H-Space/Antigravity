@@ -147,7 +147,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.3rem;
 }
 
 /* Brand Banner Board */
@@ -304,6 +304,42 @@ body {
 .color-dot.sunset { background: #ff007f; }
 .color-dot.oled { background: #ffffff; }
 
+/* Hero Lead Intro */
+.hero-intro {
+  text-align: center;
+  margin: 0 auto 1.8rem auto;
+  max-width: 780px;
+  padding: 0 1rem;
+}
+
+.hero-desc {
+  font-family: var(--font-sans);
+  font-size: 1.22rem;
+  line-height: 1.7;
+  color: var(--text-main);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.hero-desc .highlight-text {
+  color: var(--text-active);
+  font-weight: 700;
+  position: relative;
+  display: inline-block;
+}
+
+.hero-desc .highlight-text::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: var(--accent-gradient);
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
 /* Config Bar */
 .config-bar {
   background: var(--bg-glass);
@@ -392,9 +428,8 @@ body {
 
 .metric-value.accent {
   color: #fbbf24;
-  font-size: 3rem;
-  font-weight: 900;
-  text-shadow: 0 0 18px rgba(251, 191, 36, 0.4);
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 /* Words Container */
@@ -689,17 +724,27 @@ kbd {
 
 .stat-card.primary {
   grid-column: span 2;
-  background: var(--accent-gradient);
-  color: #000;
-  border: none;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(167, 139, 250, 0.12));
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .stat-card.primary .stat-title {
-  color: rgba(0, 0, 0, 0.7);
+  color: #fbbf24;
+  font-weight: 700;
+  letter-spacing: 1.5px;
 }
 
 .stat-card.primary .stat-big {
-  color: #000;
+  color: #fbbf24;
+  font-size: 3.6rem;
+  font-weight: 900;
+  text-shadow: 0 0 24px rgba(251, 191, 36, 0.45);
+  line-height: 1.1;
+  margin-top: 0.2rem;
 }
 
 .stat-title {
