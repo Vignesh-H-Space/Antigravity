@@ -526,11 +526,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!currentWordSpan) return;
 
     const lineH = getLineHeight();
-    // Only scroll when the current word is on line 3+ (beyond ~2 line heights)
-    const scrollThreshold = lineH * 1.5;
+    // Only scroll when the current word is on line 3+ in the expanded 210px wrapper
+    const scrollThreshold = lineH * 2.2;
 
     if (currentWordSpan.offsetTop > scrollThreshold) {
-      // Scroll so current word sits at the second visible line position
+      // Scroll so current word sits comfortably at the second visible line position
       const scrollTarget = currentWordSpan.offsetTop - lineH;
       wordsContainer.style.transform = `translateY(-${scrollTarget}px)`;
     } else {
