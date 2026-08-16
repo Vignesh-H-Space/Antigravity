@@ -420,7 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    updateCaretPosition();
+    scrollWordsContainerIfNeeded();
+    requestAnimationFrame(updateCaretPosition);
     updateLiveMetrics();
   }
 
@@ -470,8 +471,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      updateCaretPosition();
       scrollWordsContainerIfNeeded();
+      requestAnimationFrame(updateCaretPosition);
     } else if (key.length === 1) {
       // Regular character typed
       keystrokesTotal++;
@@ -513,10 +514,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Compute one line height dynamically from the first word element
+  function getLineHeight() {
+    const firstWord = wordsContainer.children[0];
+    if (!firstWord) return 45;
+    return firstWord.getBoundingClientRect().height;
+  }
+
   function scrollWordsContainerIfNeeded() {
     const currentWordSpan = wordsContainer.children[currentWordIndex];
-    if (currentWordSpan && currentWordSpan.offsetTop > 60) {
-      wordsContainer.style.transform = `translateY(-${currentWordSpan.offsetTop - 10}px)`;
+    if (!currentWordSpan) return;
+
+    const lineH = getLineHeight();
+    // Only scroll when the current word is on line 3+ (beyond ~2 line heights)
+    const scrollThreshold = lineH * 1.5;
+
+    if (currentWordSpan.offsetTop > scrollThreshold) {
+      // Scroll so current word sits at the second visible line position
+      const scrollTarget = currentWordSpan.offsetTop - lineH;
+      wordsContainer.style.transform = `translateY(-${scrollTarget}px)`;
+    } else {
+      wordsContainer.style.transform = 'translateY(0px)';
     }
   }
 
