@@ -3,21 +3,21 @@
    ========================================================================== */
 
 :root {
-  /* Default Cyberpunk Theme */
+  /* Default Cyberpunk Theme — Multi-color palette */
   --bg-primary: #0d0f18;
   --bg-secondary: #141724;
   --bg-glass: rgba(20, 23, 36, 0.7);
-  --border-color: rgba(0, 240, 255, 0.2);
+  --border-color: rgba(56, 189, 178, 0.2);
   --text-main: #64748b;
-  --text-active: #f1f5f9;
-  --text-correct: #00f0ff;
-  --text-error: #ff0055;
-  --text-error-bg: rgba(255, 0, 85, 0.2);
-  --accent-color: #00f0ff;
-  --accent-gradient: linear-gradient(135deg, #00f0ff, #7000ff);
-  --glow-color: rgba(0, 240, 255, 0.4);
+  --text-active: #e2e8f0;
+  --text-correct: #fbbf24;
+  --text-error: #f43f5e;
+  --text-error-bg: rgba(244, 63, 94, 0.2);
+  --accent-color: #a78bfa;
+  --accent-gradient: linear-gradient(135deg, #f472b6, #a78bfa);
+  --glow-color: rgba(167, 139, 250, 0.3);
   --key-bg: #1c2033;
-  --key-active: #00f0ff;
+  --key-active: #38bdb2;
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --radius-sm: 8px;
@@ -248,7 +248,7 @@ body {
   display: inline-block;
 }
 
-.color-dot.cyberpunk { background: #00f0ff; }
+.color-dot.cyberpunk { background: #a78bfa; }
 .color-dot.nord { background: #88c0d0; }
 .color-dot.dracula { background: #bd93f9; }
 .color-dot.emerald { background: #10b981; }
@@ -302,8 +302,8 @@ body {
 }
 
 .mode-btn.active, .option-btn.active {
-  color: var(--accent-color);
-  background: rgba(255, 255, 255, 0.05);
+  color: #f472b6;
+  background: rgba(244, 114, 182, 0.08);
 }
 
 /* Test Area */
