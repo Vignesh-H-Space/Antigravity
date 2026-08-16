@@ -342,7 +342,10 @@ body {
 }
 
 .metric-value.accent {
-  color: var(--accent-color);
+  color: #fbbf24;
+  font-size: 3rem;
+  font-weight: 900;
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.4);
 }
 
 /* Words Container */
