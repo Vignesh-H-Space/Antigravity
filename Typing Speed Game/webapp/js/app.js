@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const wordsWrapper = document.getElementById('words-wrapper');
   const wordsContainer = document.getElementById('words-container');
+  const wordsText = document.getElementById('words-text') || wordsContainer;
   const typingInput = document.getElementById('typing-input');
   const caret = document.getElementById('caret');
 
@@ -283,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderWords() {
-    wordsContainer.innerHTML = '';
+    wordsText.innerHTML = '';
     targetWords.forEach((wordStr, wIndex) => {
       const wordSpan = document.createElement('span');
       wordSpan.className = 'word';
@@ -297,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         wordSpan.appendChild(charSpan);
       });
 
-      wordsContainer.appendChild(wordSpan);
+      wordsText.appendChild(wordSpan);
     });
   }
 
@@ -376,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currentVal = typingInput.value;
     const currentWordStr = targetWords[currentWordIndex] || '';
-    const wordSpans = wordsContainer.children;
+    const wordSpans = wordsText.children;
     const currentWordSpan = wordSpans[currentWordIndex];
 
     if (!currentWordSpan) return;
@@ -447,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentVal.length === 0) return;
 
       const currentWordStr = targetWords[currentWordIndex];
-      const wordSpan = wordsContainer.children[currentWordIndex];
+      const wordSpan = wordsText.children[currentWordIndex];
 
       // Mark error if incomplete or incorrect
       if (currentVal !== currentWordStr) {
@@ -489,49 +490,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateCaretPosition() {
-    const wordSpans = wordsContainer.children;
+    const wordSpans = wordsText.children;
     if (!wordSpans || wordSpans.length === 0) return;
 
     const currentWordSpan = wordSpans[currentWordIndex];
     if (!currentWordSpan) return;
 
-    const wrapperRect = wordsWrapper.getBoundingClientRect();
+    const containerRect = wordsContainer.getBoundingClientRect();
     const charSpans = currentWordSpan.querySelectorAll('.char');
 
     if (currentCharIndex < charSpans.length) {
       const targetElement = charSpans[currentCharIndex];
       const targetRect = targetElement.getBoundingClientRect();
-      caret.style.left = `${targetRect.left - wrapperRect.left}px`;
-      caret.style.top = `${targetRect.top - wrapperRect.top}px`;
+      caret.style.left = `${targetRect.left - containerRect.left}px`;
+      caret.style.top = `${targetRect.top - containerRect.top}px`;
     } else {
       // Caret at end of current word
       const lastChar = charSpans[charSpans.length - 1];
       if (lastChar) {
         const lastRect = lastChar.getBoundingClientRect();
-        caret.style.left = `${lastRect.right - wrapperRect.left}px`;
-        caret.style.top = `${lastRect.top - wrapperRect.top}px`;
+        caret.style.left = `${lastRect.right - containerRect.left}px`;
+        caret.style.top = `${lastRect.top - containerRect.top}px`;
       }
     }
   }
 
-  // Compute one line height dynamically from the first word element
-  function getLineHeight() {
-    const firstWord = wordsContainer.children[0];
-    if (!firstWord) return 45;
-    return firstWord.getBoundingClientRect().height;
-  }
-
   function scrollWordsContainerIfNeeded() {
-    const currentWordSpan = wordsContainer.children[currentWordIndex];
+    const wordSpans = wordsText.children;
+    if (!wordSpans || wordSpans.length === 0) return;
+
+    const currentWordSpan = wordSpans[currentWordIndex];
     if (!currentWordSpan) return;
 
-    const lineH = getLineHeight();
-    // Only scroll when the current word is on line 3+ in the expanded 210px wrapper
-    const scrollThreshold = lineH * 2.2;
+    const lineH = currentWordSpan.offsetHeight || 44;
+    const wordTop = currentWordSpan.offsetTop;
 
-    if (currentWordSpan.offsetTop > scrollThreshold) {
-      // Scroll so current word sits comfortably at the second visible line position
-      const scrollTarget = currentWordSpan.offsetTop - lineH;
+    if (wordTop > lineH * 1.8) {
+      const scrollTarget = wordTop - lineH;
       wordsContainer.style.transform = `translateY(-${scrollTarget}px)`;
     } else {
       wordsContainer.style.transform = 'translateY(0px)';
@@ -570,21 +565,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const consistency = Math.max(0, Math.round(100 - (stdDev / (mean + 1e-5) * 100)));
 
     // Populate Results Modal
-    resultWpm.textContent = netWpm;
-    resultAccuracy.textContent = `${accuracy}%`;
-    resultRaw.textContent = rawWpm;
-    resultChars.textContent = `${keystrokesCorrect}/${keystrokesIncorrect}/${extraCharsCount}/${missedCharsCount}`;
-    resultConsistency.textContent = `${consistency}%`;
-    resultTime.textContent = `${Math.round(elapsed)}s`;
+    if (resultWpm) resultWpm.textContent = netWpm;
+    if (resultAccuracy) resultAccuracy.textContent = `${accuracy}%`;
+    if (resultRaw) resultRaw.textContent = rawWpm;
+    if (resultChars) resultChars.textContent = `${keystrokesCorrect}/${keystrokesIncorrect}/${extraCharsCount}/${missedCharsCount}`;
+    if (resultConsistency) resultConsistency.textContent = `${consistency}%`;
+    if (resultTime) resultTime.textContent = `${Math.round(elapsed)}s`;
 
     renderWeakKeys();
     renderWpmChart();
     saveTestRecord(netWpm, accuracy, consistency, Math.round(elapsed));
 
-    resultsModal.classList.remove('hidden');
+    if (resultsModal) resultsModal.classList.remove('hidden');
   }
 
   function renderWeakKeys() {
+    if (!weakKeysList) return;
     weakKeysList.innerHTML = '';
     const sortedKeys = Object.entries(keyErrorCounts).sort((a, b) => b[1] - a[1]);
 

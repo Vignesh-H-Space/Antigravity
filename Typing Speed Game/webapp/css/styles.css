@@ -467,15 +467,19 @@ body {
 }
 
 .words-container {
+  position: relative;
+  width: 100%;
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.words-text {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6em;
-  transition: transform var(--transition-fast);
 }
 
 .word {
-  display: flex;
-  position: relative;
+  display: inline-flex;
   color: var(--text-main);
   border-bottom: 2px solid transparent;
   transition: border-color var(--transition-fast);
@@ -486,7 +490,7 @@ body {
 }
 
 .char {
-  position: relative;
+  display: inline-block;
   transition: color var(--transition-fast);
 }
 
@@ -509,14 +513,15 @@ body {
 .caret {
   position: absolute;
   width: 3px;
-  height: 1.6em;
+  height: 1.5em;
   background-color: var(--accent-color);
   border-radius: 2px;
   box-shadow: 0 0 10px var(--accent-color);
   top: 0;
   left: 0;
-  transition: left 0.08s ease, top 0.1s ease;
+  transition: left 0.08s ease, top 0.08s ease;
   pointer-events: none;
+  z-index: 10;
 }
 
 .caret.smooth-caret {

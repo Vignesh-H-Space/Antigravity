@@ -14,7 +14,7 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <link rel="stylesheet" href="css/styles.css?v=11">
+  <link rel="stylesheet" href="css/styles.css?v=12">
 </head>
 <body>
   <div class="app-container">
@@ -112,9 +112,9 @@
       <div id="words-wrapper" class="words-wrapper" tabindex="0">
         <input type="text" id="typing-input" class="hidden-input" autocomplete="off" capitalize="off" spellcheck="false">
         <div id="words-container" class="words-container">
-          <!-- Text spans injected dynamically by JS -->
+          <div id="caret" class="caret smooth-caret"></div>
+          <div id="words-text" class="words-text"></div>
         </div>
-        <div id="caret" class="caret smooth-caret"></div>
       </div>
 
       <!-- Test Control Actions -->
@@ -236,8 +236,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/words.js?v=11"></script>
-  <script src="js/audio.js?v=11"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/words.js?v=12"></script>
+  <script src="js/audio.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>
