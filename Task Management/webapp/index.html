@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Goals & Tasks | Multi-Tier Goal Management System</title>
+  <meta name="description" content="Unified task & goal management across Daily, Weekly, Monthly, Quarterly, and Annual horizons with interactive cascading progress.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-container">
+        <div class="brand-logo">
+          <div class="brand-icon-mesh">
+            <i data-lucide="target" class="brand-svg"></i>
+          </div>
+          <div>
+            <h1 class="brand-title">APEX</h1>
+            <span class="brand-subtitle">Goal & Task System</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section-title">TIME HORIZONS</div>
+      <nav class="nav-menu">
+        <button class="nav-item active" data-horizon="all" id="tab-all">
+          <i data-lucide="layers"></i>
+          <span>All Horizons</span>
+          <span class="badge" id="badge-all">0</span>
+        </button>
+        <button class="nav-item" data-horizon="daily" id="tab-daily">
+          <span class="nav-emoji">🌅</span>
+          <span>Daily Tasks</span>
+          <span class="badge" id="badge-daily">0</span>
+        </button>
+        <button class="nav-item" data-horizon="weekly" id="tab-weekly">
+          <span class="nav-emoji">📅</span>
+          <span>Weekly Milestones</span>
+          <span class="badge" id="badge-weekly">0</span>
+        </button>
+        <button class="nav-item" data-horizon="monthly" id="tab-monthly">
+          <span class="nav-emoji">🗓️</span>
+          <span>Monthly Goals</span>
+          <span class="badge" id="badge-monthly">0</span>
+        </button>
+        <button class="nav-item" data-horizon="quarterly" id="tab-quarterly">
+          <span class="nav-emoji">🎯</span>
+          <span>Quarterly OKRs</span>
+          <span class="badge" id="badge-quarterly">0</span>
+        </button>
+        <button class="nav-item" data-horizon="annual" id="tab-annual">
+          <span class="nav-emoji">🏆</span>
+          <span>Annual Vision</span>
+          <span class="badge" id="badge-annual">0</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-section-title">VIEWS & TOOLS</div>
+      <nav class="nav-menu secondary">
+        <button class="nav-item" id="btn-view-cascade">
+          <i data-lucide="git-merge"></i>
+          <span>Goal Cascade Tree</span>
+        </button>
+        <button class="nav-item" id="btn-view-analytics">
+          <i data-lucide="bar-chart-3"></i>
+          <span>Productivity Metrics</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="streak-card">
+          <div class="streak-header">
+            <span class="streak-icon">🔥</span>
+            <div>
+              <div class="streak-title">Daily Streak</div>
+              <div class="streak-value" id="streak-counter">3 Days</div>
+            </div>
+          </div>
+          <div class="streak-progress-bar">
+            <div class="streak-fill" id="streak-fill" style="width: 75%"></div>
+          </div>
+        </div>
+
+        <div class="user-controls">
+          <button class="icon-btn" id="theme-toggle" title="Toggle Theme" aria-label="Toggle Theme">
+            <i data-lucide="sun" class="sun-icon"></i>
+            <i data-lucide="moon" class="moon-icon"></i>
+          </button>
+          <button class="icon-btn" id="btn-export-json" title="Export JSON Data" aria-label="Export Data">
+            <i data-lucide="download"></i>
+          </button>
+          <button class="icon-btn" id="btn-import-trigger" title="Import JSON Data" aria-label="Import Data">
+            <i data-lucide="upload"></i>
+          </button>
+          <input type="file" id="import-file-input" accept=".json" style="display:none;">
+          <button class="icon-btn" id="btn-reset-data" title="Reset to Sample Data" aria-label="Reset Data">
+            <i data-lucide="rotate-ccw"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header / Bar -->
+      <header class="top-header">
+        <div class="header-left">
+          <h2 class="view-title" id="current-view-heading">All Goals & Tasks</h2>
+          <p class="view-subtitle" id="current-view-desc">Holistic overview across all 5 strategic horizons.</p>
+        </div>
+        <div class="header-right">
+          <div class="search-box">
+            <i data-lucide="search" class="search-icon"></i>
+            <input type="text" id="search-input" placeholder="Search tasks, tags, categories... (Press /)" />
+            <button class="clear-search" id="clear-search" style="display:none;">&times;</button>
+          </div>
+          <button class="btn btn-primary" id="btn-open-add-modal">
+            <i data-lucide="plus"></i>
+            <span>Add Goal / Task</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Horizon Progress Summary Cards -->
+      <section class="progress-summary-grid" id="progress-summary-container">
+        <!-- Daily -->
+        <div class="horizon-card" data-horizon="daily">
+          <div class="horizon-card-top">
+            <div class="horizon-badge tier-daily">🌅 Daily</div>
+            <span class="horizon-ratio" id="stat-ratio-daily">0/0</span>
+          </div>
+          <div class="horizon-card-body">
+            <div class="horizon-pct" id="stat-pct-daily">0%</div>
+            <div class="progress-track">
+              <div class="progress-bar-fill fill-daily" id="stat-bar-daily" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly -->
+        <div class="horizon-card" data-horizon="weekly">
+          <div class="horizon-card-top">
+            <div class="horizon-badge tier-weekly">📅 Weekly</div>
+            <span class="horizon-ratio" id="stat-ratio-weekly">0/0</span>
+          </div>
+          <div class="horizon-card-body">
+            <div class="horizon-pct" id="stat-pct-weekly">0%</div>
+            <div class="progress-track">
+              <div class="progress-bar-fill fill-weekly" id="stat-bar-weekly" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly -->
+        <div class="horizon-card" data-horizon="monthly">
+          <div class="horizon-card-top">
+            <div class="horizon-badge tier-monthly">🗓️ Monthly</div>
+            <span class="horizon-ratio" id="stat-ratio-monthly">0/0</span>
+          </div>
+          <div class="horizon-card-body">
+            <div class="horizon-pct" id="stat-pct-monthly">0%</div>
+            <div class="progress-track">
+              <div class="progress-bar-fill fill-monthly" id="stat-bar-monthly" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quarterly -->
+        <div class="horizon-card" data-horizon="quarterly">
+          <div class="horizon-card-top">
+            <div class="horizon-badge tier-quarterly">🎯 Quarterly</div>
+            <span class="horizon-ratio" id="stat-ratio-quarterly">0/0</span>
+          </div>
+          <div class="horizon-card-body">
+            <div class="horizon-pct" id="stat-pct-quarterly">0%</div>
+            <div class="progress-track">
+              <div class="progress-bar-fill fill-quarterly" id="stat-bar-quarterly" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Annual -->
+        <div class="horizon-card" data-horizon="annual">
+          <div class="horizon-card-top">
+            <div class="horizon-badge tier-annual">🏆 Annual</div>
+            <span class="horizon-ratio" id="stat-ratio-annual">0/0</span>
+          </div>
+          <div class="horizon-card-body">
+            <div class="horizon-pct" id="stat-pct-annual">0%</div>
+            <div class="progress-track">
+              <div class="progress-bar-fill fill-annual" id="stat-bar-annual" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filter Controls Bar -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Status:</span>
+          <div class="segmented-control" id="status-filter">
+            <button class="segment active" data-status="all">All</button>
+            <button class="segment" data-status="active">Incomplete</button>
+            <button class="segment" data-status="completed">Completed</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Category:</span>
+          <select class="custom-select" id="category-filter">
+            <option value="all">All Categories</option>
+            <option value="Product">Product</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Career">Career</option>
+            <option value="Finance">Finance</option>
+            <option value="Health">Health</option>
+            <option value="Personal">Personal</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Priority:</span>
+          <select class="custom-select" id="priority-filter">
+            <option value="all">All Priorities</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-export-markdown" title="Copy Markdown Summary to Clipboard">
+            <i data-lucide="clipboard-copy"></i>
+            <span>Export Markdown</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Tasks List Container -->
+      <section class="task-list-view" id="tasks-container">
+        <!-- Injected via JavaScript -->
+      </section>
+
+      <!-- Goal Cascade Tree View (Hidden by default) -->
+      <section class="cascade-tree-view" id="cascade-container" style="display:none;">
+        <div class="view-banner">
+          <h3><i data-lucide="git-merge"></i> Strategic Goal Cascade</h3>
+          <p>Trace daily execution items directly back up to Annual Pillars and North Star Goals.</p>
+        </div>
+        <div class="tree-content" id="tree-content">
+          <!-- Injected dynamically -->
+        </div>
+      </section>
+
+      <!-- Productivity Analytics View (Hidden by default) -->
+      <section class="analytics-view" id="analytics-container" style="display:none;">
+        <div class="analytics-grid">
+          <div class="metric-box">
+            <div class="metric-title">Overall Completion</div>
+            <div class="metric-large-value" id="analytic-overall-pct">0%</div>
+            <div class="metric-sub" id="analytic-overall-count">0 of 0 goals done</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-title">Daily Execution Rate</div>
+            <div class="metric-large-value highlight-cyan" id="analytic-daily-rate">0%</div>
+            <div class="metric-sub">Today's high-leverage focus</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-title">Strategic Alignment</div>
+            <div class="metric-large-value highlight-purple" id="analytic-alignment-score">88%</div>
+            <div class="metric-sub">Tasks linked to higher tiers</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-title">Urgent Tasks Open</div>
+            <div class="metric-large-value highlight-rose" id="analytic-urgent-open">0</div>
+            <div class="metric-sub">Immediate attention required</div>
+          </div>
+        </div>
+
+        <div class="breakdown-card">
+          <h3 class="breakdown-title"><i data-lucide="pie-chart"></i> Category Distribution & Progress</h3>
+          <div class="category-breakdown-list" id="category-breakdown-container">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Add / Edit Task Modal -->
+  <div class="modal-backdrop" id="task-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title-text">Create Goal / Task</h3>
+        <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+      </div>
+
+      <form id="task-form">
+        <input type="hidden" id="task-id-input" value="">
+
+        <div class="form-group">
+          <label for="form-tier">Time Horizon / Tier <span class="req">*</span></label>
+          <select id="form-tier" class="form-control" required>
+            <option value="daily">🌅 Daily Task (Today's To-Do)</option>
+            <option value="weekly">📅 Weekly Milestone (This Week)</option>
+            <option value="monthly">🗓️ Monthly Goal (This Month)</option>
+            <option value="quarterly">🎯 Quarterly OKR (90-Day Objective)</option>
+            <option value="annual">🏆 Annual Vision (Yearly Goal)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="form-title">Goal / Task Title <span class="req">*</span></label>
+          <input type="text" id="form-title" class="form-control" placeholder="e.g., Ship high-throughput orchestrator" required autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="form-desc">Description / Success Criteria</label>
+          <textarea id="form-desc" class="form-control" rows="3" placeholder="Key deliverables, quantitative metrics, or notes..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="form-priority">Priority</label>
+            <select id="form-priority" class="form-control">
+              <option value="low">🟢 Low</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="high">🟠 High</option>
+              <option value="urgent">🔴 Urgent</option>
+            </select>
+          </div>
+
+          <div class="form-group col">
+            <label for="form-category">Category</label>
+            <select id="form-category" class="form-control">
+              <option value="Product">Product</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Career">Career</option>
+              <option value="Finance">Finance</option>
+              <option value="Health">Health</option>
+              <option value="Personal">Personal</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="form-due">Due Date</label>
+            <input type="date" id="form-due" class="form-control">
+          </div>
+
+          <div class="form-group col">
+            <label for="form-parent">Cascade Parent (Link Upward)</label>
+            <select id="form-parent" class="form-control">
+              <option value="">None (Independent Goal)</option>
+              <!-- Injected dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-tags">Tags (Comma-separated)</label>
+          <input type="text" id="form-tags" class="form-control" placeholder="e.g. backend, q3, sprint">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modal-save-btn">Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/initial_data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
