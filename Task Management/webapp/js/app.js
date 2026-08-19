@@ -1,10 +1,10 @@
 /**
- * Apex Goal & Task Management Web Application
- * Full interactive reactive state manager with goal cascade & confetti
+ * Tesseract Goal & Task Management Matrix
+ * Multi-dimensional reactive state manager with goal cascade & cosmic feedback
  */
 
-const STORAGE_KEY = 'apex_goals_tasks_data';
-const THEME_KEY = 'apex_goals_theme';
+const STORAGE_KEY = 'tesseract_goals_tasks_data';
+const THEME_KEY = 'tesseract_goals_theme';
 
 const TIERS = [
   { id: 'daily', name: 'Daily Tasks', emoji: '🌅', color: '#06b6d4', desc: "Today's high-leverage execution items" },
@@ -650,7 +650,7 @@ function exportJSON() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.tasks, null, 2));
   const downloadAnchor = document.createElement('a');
   downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `apex_goals_tasks_${new Date().toISOString().split('T')[0]}.json`);
+  downloadAnchor.setAttribute("download", `tesseract_matrix_${new Date().toISOString().split('T')[0]}.json`);
   document.body.appendChild(downloadAnchor);
   downloadAnchor.click();
   downloadAnchor.remove();
@@ -682,7 +682,7 @@ function handleImportJSON(event) {
 }
 
 function exportMarkdown() {
-  let md = `# APEX GOALS & TASKS SUMMARY\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
+  let md = `# TESSERACT GOALS & TASKS MATRIX\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
   TIERS.forEach(tierObj => {
     const tierTasks = state.tasks.filter(t => t.tier === tierObj.id);
     md += `## ${tierObj.emoji} ${tierObj.name} (${tierTasks.filter(t => t.completed).length}/${tierTasks.length})\n`;
