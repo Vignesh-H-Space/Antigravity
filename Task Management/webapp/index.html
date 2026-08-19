@@ -32,10 +32,10 @@
 
       <div class="sidebar-section-title">TIME HORIZONS</div>
       <nav class="nav-menu">
-        <button class="nav-item active" data-horizon="all" id="tab-all">
-          <i data-lucide="layers"></i>
-          <span>All Horizons</span>
-          <span class="badge" id="badge-all">0</span>
+        <button class="nav-item active" data-horizon="general" id="tab-general">
+          <i data-lucide="layout-grid"></i>
+          <span>General (Daily/Wk/Mo)</span>
+          <span class="badge" id="badge-general">0</span>
         </button>
         <button class="nav-item" data-horizon="daily" id="tab-daily">
           <span class="nav-emoji">🌅</span>
@@ -61,6 +61,11 @@
           <span class="nav-emoji">🏆</span>
           <span>Annual Vision</span>
           <span class="badge" id="badge-annual">0</span>
+        </button>
+        <button class="nav-item" data-horizon="all" id="tab-all">
+          <i data-lucide="layers"></i>
+          <span>All 5 Horizons</span>
+          <span class="badge" id="badge-all">0</span>
         </button>
       </nav>
 
@@ -174,8 +179,8 @@
           </div>
         </div>
 
-        <!-- Quarterly -->
-        <div class="horizon-card" data-horizon="quarterly">
+        <!-- Quarterly (hidden by default in General view) -->
+        <div class="horizon-card" data-horizon="quarterly" style="display:none;">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-quarterly">🎯 Quarterly</div>
             <span class="horizon-ratio" id="stat-ratio-quarterly">0/0</span>
@@ -188,8 +193,8 @@
           </div>
         </div>
 
-        <!-- Annual -->
-        <div class="horizon-card" data-horizon="annual">
+        <!-- Annual (hidden by default in General view) -->
+        <div class="horizon-card" data-horizon="annual" style="display:none;">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-annual">🏆 Annual</div>
             <span class="horizon-ratio" id="stat-ratio-annual">0/0</span>
@@ -203,8 +208,22 @@
         </div>
       </section>
 
+
       <!-- Filter Controls Bar -->
       <div class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Horizon:</span>
+          <select class="custom-select" id="horizon-select-filter">
+            <option value="general">⭐ General (Daily, Weekly, Monthly)</option>
+            <option value="daily">🌅 Daily Tasks</option>
+            <option value="weekly">📅 Weekly Milestones</option>
+            <option value="monthly">🗓️ Monthly Goals</option>
+            <option value="quarterly">🎯 Quarterly OKRs</option>
+            <option value="annual">🏆 Annual Vision</option>
+            <option value="all">🌐 All 5 Horizons</option>
+          </select>
+        </div>
+
         <div class="filter-group">
           <span class="filter-label">Status:</span>
           <div class="segmented-control" id="status-filter">

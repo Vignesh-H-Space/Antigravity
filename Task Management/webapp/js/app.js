@@ -16,7 +16,7 @@ const TIERS = [
 
 let state = {
   tasks: [],
-  activeHorizon: 'all', // 'all' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual'
+  activeHorizon: 'general', // 'general' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'all'
   activeView: 'list', // 'list' | 'cascade' | 'analytics'
   statusFilter: 'all', // 'all' | 'active' | 'completed'
   categoryFilter: 'all',
@@ -38,6 +38,7 @@ const taskForm = document.getElementById('task-form');
 const modalTitleText = document.getElementById('modal-title-text');
 const formParentSelect = document.getElementById('form-parent');
 const toastContainer = document.getElementById('toast-container');
+const horizonSelectFilter = document.getElementById('horizon-select-filter');
 
 // Initialization
 function init() {
@@ -82,18 +83,53 @@ function toggleTheme() {
   lucide.createIcons();
 }
 
+// Set Horizon Filter and synchronize UI
+function setHorizonFilter(horizon) {
+  state.activeHorizon = horizon;
+  state.activeView = 'list';
+
+  // Sync sidebar
+  document.querySelectorAll('.nav-menu button[data-horizon]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-horizon') === horizon);
+  });
+  document.getElementById('btn-view-cascade').classList.remove('active');
+  document.getElementById('btn-view-analytics').classList.remove('active');
+
+  // Sync chips
+  document.querySelectorAll('.horizon-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.getAttribute('data-horizon') === horizon);
+  });
+
+  // Sync dropdown
+  if (horizonSelectFilter) {
+    horizonSelectFilter.value = horizon;
+  }
+
+  renderAll();
+}
+
 // Event Bindings
 function bindEvents() {
-  // Horizon Tabs
+  // Horizon Sidebar Tabs
   document.querySelectorAll('.nav-menu button[data-horizon]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.activeHorizon = btn.getAttribute('data-horizon');
-      state.activeView = 'list';
-      renderAll();
+      setHorizonFilter(btn.getAttribute('data-horizon'));
     });
   });
+
+  // Horizon Quick Chips
+  document.querySelectorAll('.horizon-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      setHorizonFilter(chip.getAttribute('data-horizon'));
+    });
+  });
+
+  // Horizon Dropdown Select Filter
+  if (horizonSelectFilter) {
+    horizonSelectFilter.addEventListener('change', (e) => {
+      setHorizonFilter(e.target.value);
+    });
+  }
 
   // Secondary Views
   document.getElementById('btn-view-cascade').addEventListener('click', () => {
@@ -273,9 +309,12 @@ function renderAll() {
 }
 
 function updateHeaderTitle() {
-  if (state.activeHorizon === 'all') {
-    currentViewHeading.textContent = 'All Goals & Tasks';
-    currentViewDesc.textContent = 'Holistic overview across all 5 strategic time horizons.';
+  if (state.activeHorizon === 'general') {
+    currentViewHeading.textContent = '⭐ General Horizons (Daily, Weekly, Monthly)';
+    currentViewDesc.textContent = 'Core high-leverage execution tasks & goals for immediate focus.';
+  } else if (state.activeHorizon === 'all') {
+    currentViewHeading.textContent = '🌐 All 5 Strategic Horizons';
+    currentViewDesc.textContent = 'Holistic overview across all 5 strategic time horizons (Daily to Annual).';
   } else {
     const tierObj = TIERS.find(t => t.id === state.activeHorizon);
     if (tierObj) {
@@ -286,6 +325,10 @@ function updateHeaderTitle() {
 }
 
 function updateSidebarBadges() {
+  const generalCount = state.tasks.filter(task => ['daily', 'weekly', 'monthly'].includes(task.tier)).length;
+  const badgeGeneral = document.getElementById('badge-general');
+  if (badgeGeneral) badgeGeneral.textContent = generalCount;
+
   document.getElementById('badge-all').textContent = state.tasks.length;
   TIERS.forEach(t => {
     const count = state.tasks.filter(task => task.tier === t.id).length;
@@ -296,6 +339,7 @@ function updateSidebarBadges() {
 
 function updateProgressCards() {
   TIERS.forEach(t => {
+    const cardEl = document.querySelector(`.horizon-card[data-horizon="${t.id}"]`);
     const tierTasks = state.tasks.filter(task => task.tier === t.id);
     const total = tierTasks.length;
     const completed = tierTasks.filter(task => task.completed).length;
@@ -308,6 +352,17 @@ function updateProgressCards() {
     if (ratioEl) ratioEl.textContent = `${completed}/${total}`;
     if (pctEl) pctEl.textContent = `${pct}%`;
     if (barEl) barEl.style.width = `${pct}%`;
+
+    // Dynamic card visibility based on activeHorizon
+    if (cardEl) {
+      if (state.activeHorizon === 'general') {
+        cardEl.style.display = ['daily', 'weekly', 'monthly'].includes(t.id) ? 'block' : 'none';
+      } else if (state.activeHorizon === 'all') {
+        cardEl.style.display = 'block';
+      } else {
+        cardEl.style.display = state.activeHorizon === t.id ? 'block' : 'none';
+      }
+    }
   });
 }
 
@@ -317,7 +372,11 @@ function renderTaskList() {
 
   let filtered = state.tasks.filter(task => {
     // Horizon filter
-    if (state.activeHorizon !== 'all' && task.tier !== state.activeHorizon) return false;
+    if (state.activeHorizon === 'general') {
+      if (!['daily', 'weekly', 'monthly'].includes(task.tier)) return false;
+    } else if (state.activeHorizon !== 'all') {
+      if (task.tier !== state.activeHorizon) return false;
+    }
 
     // Status filter
     if (state.statusFilter === 'active' && task.completed) return false;
@@ -352,9 +411,13 @@ function renderTaskList() {
     return;
   }
 
-  // If "all" horizon selected, group by tier
-  if (state.activeHorizon === 'all') {
-    TIERS.forEach(tierObj => {
+  // If "general" or "all" horizon selected, group by visible tiers
+  if (state.activeHorizon === 'general' || state.activeHorizon === 'all') {
+    const visibleTiers = state.activeHorizon === 'general'
+      ? TIERS.filter(t => ['daily', 'weekly', 'monthly'].includes(t.id))
+      : TIERS;
+
+    visibleTiers.forEach(tierObj => {
       const tierItems = filtered.filter(t => t.tier === tierObj.id);
       if (tierItems.length > 0) {
         const groupEl = document.createElement('div');
