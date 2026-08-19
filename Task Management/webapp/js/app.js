@@ -310,8 +310,8 @@ function renderAll() {
 
 function updateHeaderTitle() {
   if (state.activeHorizon === 'general') {
-    currentViewHeading.textContent = '⭐ General Horizons (Daily, Weekly, Monthly)';
-    currentViewDesc.textContent = 'Core high-leverage execution tasks & goals for immediate focus.';
+    currentViewHeading.textContent = 'Home';
+    currentViewDesc.textContent = 'Your daily, weekly, and monthly goals at a glance.';
   } else if (state.activeHorizon === 'all') {
     currentViewHeading.textContent = '🌐 All 5 Strategic Horizons';
     currentViewDesc.textContent = 'Holistic overview across all 5 strategic time horizons (Daily to Annual).';
