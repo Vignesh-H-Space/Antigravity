@@ -274,6 +274,9 @@ function triggerConfetti() {
 
 // Render Functions
 function renderAll() {
+  // Sync all horizon controls to current state
+  syncHorizonUI();
+
   updateSidebarBadges();
   updateProgressCards();
   
@@ -306,6 +309,22 @@ function renderAll() {
   }
 
   lucide.createIcons();
+}
+
+// Keep sidebar tabs, filter dropdown, and header all in sync
+function syncHorizonUI() {
+  const h = state.activeHorizon;
+
+  // Sidebar active tab
+  document.querySelectorAll('.nav-menu button[data-horizon]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-horizon') === h);
+  });
+
+  // Filter bar dropdown
+  const dropdown = document.getElementById('horizon-select-filter');
+  if (dropdown && dropdown.value !== h) {
+    dropdown.value = h;
+  }
 }
 
 function updateHeaderTitle() {
