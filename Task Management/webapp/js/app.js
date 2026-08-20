@@ -6,6 +6,7 @@
 const STORAGE_KEY = 'tesseract_goals_tasks_data';
 const THEME_KEY = 'tesseract_goals_theme';
 const STREAK_KEY = 'tesseract_streak_data';
+const PROFILE_KEY = 'tesseract_profile_data';
 
 // Streak milestone badges
 const STREAK_BADGES = [
@@ -38,7 +39,11 @@ let state = {
   categoryFilter: 'all',
   priorityFilter: 'all',
   searchQuery: '',
-  editingTaskId: null
+  editingTaskId: null,
+  profile: {
+    name: 'Tesseract User',
+    image: null
+  }
 };
 
 // DOM Elements
@@ -62,13 +67,13 @@ function init() {
   loadTheme();
   loadData();
   loadStreak();
+  loadProfile();
   bindEvents();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
 }
 
-// Storage & Data Loading
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
@@ -86,6 +91,21 @@ function loadData() {
 
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+}
+
+function loadProfile() {
+  const saved = localStorage.getItem(PROFILE_KEY);
+  if (saved) {
+    try {
+      state.profile = JSON.parse(saved);
+    } catch (e) {
+      // Keep default
+    }
+  }
+}
+
+function saveProfile() {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
 }
 
 // ── Streak Engine ──────────────────────────────────────────
@@ -366,6 +386,39 @@ function bindEvents() {
     state.activeView = 'list';
     renderAll();
   });
+
+  // Profile Edit
+  const profileAvatarBtn = document.getElementById('profile-avatar-large');
+  const profileImageInput = document.getElementById('profile-image-input');
+  if (profileAvatarBtn && profileImageInput) {
+    profileAvatarBtn.addEventListener('click', () => {
+      profileImageInput.click();
+    });
+    profileImageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          state.profile.image = event.target.result;
+          saveProfile();
+          renderProfileView(); // re-render
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  const btnEditName = document.getElementById('btn-edit-name');
+  if (btnEditName) {
+    btnEditName.addEventListener('click', () => {
+      const newName = prompt("Enter your new profile name:", state.profile.name);
+      if (newName && newName.trim() !== '') {
+        state.profile.name = newName.trim();
+        saveProfile();
+        renderProfileView();
+      }
+    });
+  }
 
   const importTrigger = document.getElementById('btn-import-trigger');
   const importInput = document.getElementById('import-file-input');
@@ -957,6 +1010,7 @@ function exportMarkdown() {
 function renderProfileView() {
   const tasks = state.tasks;
   const streak = state.streak || { count: 0, lastDate: null };
+  const profile = state.profile || { name: 'Tesseract User', image: null };
   const completed = tasks.filter(t => t.completed);
   const total = tasks.length;
   const rate = total > 0 ? Math.round((completed.length / total) * 100) : 0;
@@ -969,16 +1023,28 @@ function renderProfileView() {
     localStorage.setItem(BEST_STREAK_KEY, bestStreak.toString());
   }
 
-  // Tagline based on stats
-  let tagline = 'Ready to start your journey!';
-  if (streak.count >= 100) tagline = 'Legendary discipline. Unstoppable force.';
-  else if (streak.count >= 50) tagline = 'Elite performer. Consistency is your superpower.';
-  else if (streak.count >= 30) tagline = 'Month-long warrior. The habit is cemented.';
-  else if (streak.count >= 7) tagline = 'Week streak champion! Momentum is building.';
-  else if (completed.length > 0) tagline = 'Goal-driven achiever. Keep pushing forward.';
+  // Tagline based on stats (one word motivation)
+  let tagline = 'Starter';
+  if (streak.count >= 100) tagline = 'Legendary';
+  else if (streak.count >= 50) tagline = 'Relentless';
+  else if (streak.count >= 30) tagline = 'Disciplined';
+  else if (streak.count >= 7) tagline = 'Consistent';
+  else if (completed.length > 0) tagline = 'Initiator';
 
   // Populate hero
+  document.getElementById('profile-name').textContent = profile.name;
   document.getElementById('profile-tagline').textContent = tagline;
+  
+  const avatarImg = document.getElementById('profile-avatar-img');
+  const avatarFallback = document.getElementById('profile-avatar-fallback');
+  if (profile.image) {
+    avatarImg.src = profile.image;
+    avatarImg.style.display = 'block';
+    avatarFallback.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarFallback.style.display = 'block';
+  }
 
   // Member since (earliest createdAt)
   const dates = tasks.map(t => t.createdAt).filter(Boolean).sort();

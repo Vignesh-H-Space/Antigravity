@@ -1470,11 +1470,47 @@ body {
   flex-shrink: 0;
   box-shadow: 0 0 24px rgba(99, 102, 241, 0.35);
   border: 3px solid rgba(167, 139, 250, 0.5);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
+}
+
+.profile-avatar-large:hover {
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.55);
 }
 
 .profile-avatar-large svg {
   width: 40px;
   height: 40px;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 50%;
+}
+
+.avatar-overlay svg {
+  width: 22px;
+  height: 22px;
+  color: #fff;
+}
+
+.profile-avatar-large:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .profile-name {
@@ -1484,6 +1520,32 @@ body {
   letter-spacing: -0.02em;
   color: var(--text-primary);
   margin: 0;
+}
+
+.profile-edit-name-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.profile-edit-name-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border-color: var(--text-muted);
+}
+
+.profile-edit-name-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .profile-tagline {
