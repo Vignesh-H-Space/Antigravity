@@ -310,71 +310,113 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  font-size: 1rem;
+  font-size: 1.1rem;
   position: relative;
-  transition: all 0.3s ease;
-  cursor: default;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
 }
 
 .streak-badge.earned {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(239, 68, 68, 0.2));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(239, 68, 68, 0.25));
   border: 2px solid #f59e0b;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4), inset 0 0 6px rgba(245, 158, 11, 0.2);
+  opacity: 1;
 }
 
+.streak-badge.earned:hover {
+  transform: translateY(-3px) scale(1.15);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: #fbbf24;
+}
+
+/* Next unlockable badge - distinct shaded target styling */
 .streak-badge.next {
-  background: rgba(255, 255, 255, 0.04);
-  border: 2px dashed rgba(255, 255, 255, 0.15);
-  opacity: 0.4;
-  animation: pulseNext 2.5s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.12));
+  border: 2px dashed #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.25);
+  opacity: 0.9;
+  animation: pulseNextBadge 2s ease-in-out infinite;
 }
 
+.streak-badge.next:hover {
+  transform: translateY(-3px) scale(1.15);
+  opacity: 1;
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Locked badges - shaded out clearly */
 .streak-badge.locked {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  opacity: 0.2;
-  filter: grayscale(1);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  opacity: 0.45;
+  filter: grayscale(0.85);
+}
+
+.streak-badge.locked:hover {
+  transform: translateY(-2px) scale(1.1);
+  opacity: 0.75;
+  filter: grayscale(0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="light"] .streak-badge.next {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.12);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(99, 102, 241, 0.1));
+  border-color: #d97706;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
 }
 
 [data-theme="light"] .streak-badge.locked {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 0.45;
 }
 
-@keyframes pulseNext {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.65; transform: scale(1.05); }
+[data-theme="light"] .streak-badge.locked:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.25);
+  opacity: 0.75;
+}
+
+@keyframes pulseNextBadge {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.2), inset 0 0 4px rgba(245, 158, 11, 0.1);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.45), inset 0 0 8px rgba(245, 158, 11, 0.2);
+    transform: scale(1.05);
+  }
 }
 
 .streak-badge-tooltip {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-size: 0.68rem;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary, #ffffff);
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm, 6px);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 20;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
 }
 
 .streak-badge:hover .streak-badge-tooltip {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .user-controls {
