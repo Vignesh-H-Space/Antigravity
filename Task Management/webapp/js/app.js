@@ -55,6 +55,7 @@ const modalTitleText = document.getElementById('modal-title-text');
 const formParentSelect = document.getElementById('form-parent');
 const toastContainer = document.getElementById('toast-container');
 const horizonSelectFilter = document.getElementById('horizon-select-filter');
+const profileContainer = document.getElementById('profile-container');
 
 // Initialization
 function init() {
@@ -348,7 +349,6 @@ function bindEvents() {
     }
   });
 
-  // Theme & User Actions
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
   document.getElementById('btn-open-add-modal').addEventListener('click', () => openAddModal());
   document.getElementById('modal-close-btn').addEventListener('click', closeModal);
@@ -356,6 +356,16 @@ function bindEvents() {
   document.getElementById('btn-reset-data').addEventListener('click', resetToSampleData);
   document.getElementById('btn-export-json').addEventListener('click', exportJSON);
   document.getElementById('btn-export-markdown').addEventListener('click', exportMarkdown);
+
+  // Profile page
+  document.getElementById('btn-profile').addEventListener('click', () => {
+    state.activeView = 'profile';
+    renderAll();
+  });
+  document.getElementById('btn-profile-back').addEventListener('click', () => {
+    state.activeView = 'list';
+    renderAll();
+  });
 
   const importTrigger = document.getElementById('btn-import-trigger');
   const importInput = document.getElementById('import-file-input');
@@ -431,6 +441,7 @@ function renderAll() {
     tasksContainer.style.display = 'block';
     cascadeContainer.style.display = 'none';
     analyticsContainer.style.display = 'none';
+    profileContainer.style.display = 'none';
     document.querySelector('.filter-bar').style.display = 'flex';
     document.getElementById('progress-summary-container').style.display = 'grid';
     updateHeaderTitle();
@@ -439,6 +450,7 @@ function renderAll() {
     tasksContainer.style.display = 'none';
     cascadeContainer.style.display = 'block';
     analyticsContainer.style.display = 'none';
+    profileContainer.style.display = 'none';
     document.querySelector('.filter-bar').style.display = 'none';
     document.getElementById('progress-summary-container').style.display = 'none';
     currentViewHeading.textContent = 'Strategic Goal Cascade';
@@ -448,11 +460,22 @@ function renderAll() {
     tasksContainer.style.display = 'none';
     cascadeContainer.style.display = 'none';
     analyticsContainer.style.display = 'block';
+    profileContainer.style.display = 'none';
     document.querySelector('.filter-bar').style.display = 'none';
     document.getElementById('progress-summary-container').style.display = 'grid';
     currentViewHeading.textContent = 'Productivity & Goal Analytics';
     currentViewDesc.textContent = 'Comprehensive metric tracking and horizon performance.';
     renderAnalyticsView();
+  } else if (state.activeView === 'profile') {
+    tasksContainer.style.display = 'none';
+    cascadeContainer.style.display = 'none';
+    analyticsContainer.style.display = 'none';
+    profileContainer.style.display = 'block';
+    document.querySelector('.filter-bar').style.display = 'none';
+    document.getElementById('progress-summary-container').style.display = 'none';
+    currentViewHeading.textContent = 'Your Profile';
+    currentViewDesc.textContent = 'Stats, badges, and activity history.';
+    renderProfileView();
   }
 
   lucide.createIcons();
@@ -928,6 +951,148 @@ function exportMarkdown() {
   }).catch(() => {
     showToast('Failed to copy to clipboard.', 'error');
   });
+}
+
+// ── Profile View ──────────────────────────────────────────
+function renderProfileView() {
+  const tasks = state.tasks;
+  const streak = state.streak || { count: 0, lastDate: null };
+  const completed = tasks.filter(t => t.completed);
+  const total = tasks.length;
+  const rate = total > 0 ? Math.round((completed.length / total) * 100) : 0;
+
+  // Best streak tracking
+  const BEST_STREAK_KEY = 'tesseract_best_streak';
+  let bestStreak = parseInt(localStorage.getItem(BEST_STREAK_KEY) || '0');
+  if (streak.count > bestStreak) {
+    bestStreak = streak.count;
+    localStorage.setItem(BEST_STREAK_KEY, bestStreak.toString());
+  }
+
+  // Tagline based on stats
+  let tagline = 'Ready to start your journey!';
+  if (streak.count >= 100) tagline = 'Legendary discipline. Unstoppable force.';
+  else if (streak.count >= 50) tagline = 'Elite performer. Consistency is your superpower.';
+  else if (streak.count >= 30) tagline = 'Month-long warrior. The habit is cemented.';
+  else if (streak.count >= 7) tagline = 'Week streak champion! Momentum is building.';
+  else if (completed.length > 0) tagline = 'Goal-driven achiever. Keep pushing forward.';
+
+  // Populate hero
+  document.getElementById('profile-tagline').textContent = tagline;
+
+  // Member since (earliest createdAt)
+  const dates = tasks.map(t => t.createdAt).filter(Boolean).sort();
+  if (dates.length > 0) {
+    const d = new Date(dates[0]);
+    document.getElementById('profile-joined-date').textContent = `Member since ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+  }
+
+  // Stats cards
+  document.getElementById('pstat-total-tasks').textContent = total;
+  document.getElementById('pstat-completed').textContent = completed.length;
+  document.getElementById('pstat-completion-rate').textContent = `${rate}%`;
+  document.getElementById('pstat-streak').textContent = streak.count;
+  document.getElementById('pstat-best-streak').textContent = bestStreak;
+
+  // Badge showcase
+  const badgeContainer = document.getElementById('profile-badge-showcase');
+  badgeContainer.innerHTML = '';
+  const count = streak.count;
+
+  STREAK_BADGES.forEach((badge, idx) => {
+    const earned = count >= badge.days;
+    const isNext = !earned && (idx === 0 || count >= STREAK_BADGES[idx - 1].days);
+
+    const remaining = badge.days - count;
+    let statusText = '';
+    let statusClass = '';
+    if (earned) {
+      statusText = '✓ Earned';
+      statusClass = 'earned';
+    } else if (isNext) {
+      statusText = `${remaining} day${remaining !== 1 ? 's' : ''} to go`;
+      statusClass = 'next';
+    } else {
+      statusText = `${badge.days} days`;
+      statusClass = 'locked';
+    }
+
+    const el = document.createElement('div');
+    el.className = `profile-badge-item ${statusClass}`;
+    el.innerHTML = `
+      <span class="badge-emoji">${badge.emoji}</span>
+      <span class="badge-name">${badge.name}</span>
+      <span class="badge-days">${badge.days} day streak</span>
+      <span class="badge-status">${statusText}</span>
+    `;
+    badgeContainer.appendChild(el);
+  });
+
+  // Horizon breakdown
+  const breakdownContainer = document.getElementById('profile-horizon-breakdown');
+  breakdownContainer.innerHTML = '';
+  TIERS.forEach(tier => {
+    const tierTasks = tasks.filter(t => t.tier === tier.id);
+    const tierDone = tierTasks.filter(t => t.completed).length;
+    const tierTotal = tierTasks.length;
+    const pct = tierTotal > 0 ? Math.round((tierDone / tierTotal) * 100) : 0;
+
+    const row = document.createElement('div');
+    row.className = 'profile-horizon-row';
+    row.innerHTML = `
+      <span class="profile-horizon-label">${tier.emoji} ${tier.name}</span>
+      <div class="profile-horizon-bar-track">
+        <div class="profile-horizon-bar-fill" style="width: ${pct}%; background: ${tier.color};"></div>
+      </div>
+      <span class="profile-horizon-pct">${tierDone}/${tierTotal} (${pct}%)</span>
+    `;
+    breakdownContainer.appendChild(row);
+  });
+
+  // Recent activity (completed tasks, sorted by completedAt)
+  const activityContainer = document.getElementById('profile-activity-list');
+  activityContainer.innerHTML = '';
+
+  const recentCompleted = tasks
+    .filter(t => t.completedAt)
+    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+    .slice(0, 15);
+
+  if (recentCompleted.length === 0) {
+    activityContainer.innerHTML = '<div class="profile-empty-activity">No completed tasks yet. Start checking off your goals!</div>';
+  } else {
+    recentCompleted.forEach(task => {
+      const tier = TIERS.find(t => t.id === task.tier);
+      const when = new Date(task.completedAt);
+      const timeAgo = getTimeAgo(when);
+
+      const item = document.createElement('div');
+      item.className = 'profile-activity-item';
+      item.innerHTML = `
+        <div class="profile-activity-icon completed">✅</div>
+        <div class="profile-activity-text">
+          <span>${escapeHTML(task.title)}</span>
+          <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">${tier ? tier.emoji : ''}</span>
+        </div>
+        <div class="profile-activity-time">${timeAgo}</div>
+      `;
+      activityContainer.appendChild(item);
+    });
+  }
+}
+
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function resetToSampleData() {

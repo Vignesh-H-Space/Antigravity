@@ -136,6 +136,9 @@
             <i data-lucide="plus"></i>
             <span>Add Goal / Task</span>
           </button>
+          <button class="profile-avatar-btn" id="btn-profile" title="Your Profile">
+            <i data-lucide="user" class="profile-avatar-icon"></i>
+          </button>
         </div>
       </header>
 
@@ -314,6 +317,78 @@
           <h3 class="breakdown-title"><i data-lucide="pie-chart"></i> Category Distribution & Progress</h3>
           <div class="category-breakdown-list" id="category-breakdown-container">
             <!-- Injected dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Profile Page View (Hidden by default) -->
+      <section class="profile-view" id="profile-container" style="display:none;">
+        <div class="profile-hero">
+          <button class="profile-back-btn" id="btn-profile-back">
+            <i data-lucide="arrow-left"></i>
+            <span>Back</span>
+          </button>
+          <div class="profile-hero-inner">
+            <div class="profile-avatar-large" id="profile-avatar-large">
+              <i data-lucide="user"></i>
+            </div>
+            <div class="profile-hero-info">
+              <h2 class="profile-name" id="profile-name">Tesseract User</h2>
+              <p class="profile-tagline" id="profile-tagline">Goal-driven achiever</p>
+              <div class="profile-joined">
+                <i data-lucide="calendar"></i>
+                <span id="profile-joined-date">Member since —</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="profile-stats-row" id="profile-stats-row">
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="pstat-total-tasks">0</div>
+            <div class="profile-stat-label">Total Tasks</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="pstat-completed">0</div>
+            <div class="profile-stat-label">Completed</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="pstat-completion-rate">0%</div>
+            <div class="profile-stat-label">Completion Rate</div>
+          </div>
+          <div class="profile-stat-card accent">
+            <div class="profile-stat-value" id="pstat-streak">0</div>
+            <div class="profile-stat-label">Day Streak 🔥</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="pstat-best-streak">0</div>
+            <div class="profile-stat-label">Best Streak</div>
+          </div>
+        </div>
+
+        <!-- Badge Showcase -->
+        <div class="profile-section-card">
+          <h3 class="profile-section-title"><i data-lucide="award"></i> Badge Collection</h3>
+          <p class="profile-section-sub">Earn badges by maintaining your daily streak. Complete all daily tasks to keep it alive.</p>
+          <div class="profile-badge-showcase" id="profile-badge-showcase">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Per-Horizon Breakdown -->
+        <div class="profile-section-card">
+          <h3 class="profile-section-title"><i data-lucide="layers"></i> Horizon Breakdown</h3>
+          <div class="profile-horizon-breakdown" id="profile-horizon-breakdown">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="profile-section-card">
+          <h3 class="profile-section-title"><i data-lucide="activity"></i> Recent Activity</h3>
+          <div class="profile-activity-list" id="profile-activity-list">
+            <!-- Injected by JS -->
           </div>
         </div>
       </section>
