@@ -5,6 +5,22 @@
 
 const STORAGE_KEY = 'tesseract_goals_tasks_data';
 const THEME_KEY = 'tesseract_goals_theme';
+const STREAK_KEY = 'tesseract_streak_data';
+
+// Streak milestone badges
+const STREAK_BADGES = [
+  { days: 7,   emoji: '🏅', name: '1 Week' },
+  { days: 14,  emoji: '⚡', name: '2 Weeks' },
+  { days: 30,  emoji: '🌟', name: '30 Days' },
+  { days: 50,  emoji: '💎', name: '50 Days' },
+  { days: 75,  emoji: '🔥', name: '75 Days' },
+  { days: 100, emoji: '👑', name: '100 Days' },
+  { days: 150, emoji: '🚀', name: '150 Days' },
+  { days: 200, emoji: '🏆', name: '200 Days' },
+  { days: 250, emoji: '💫', name: '250 Days' },
+  { days: 300, emoji: '🌈', name: '300 Days' },
+  { days: 365, emoji: '🎯', name: '1 Year' }
+];
 
 const TIERS = [
   { id: 'daily', name: 'Daily Tasks', emoji: '🌅', color: '#06b6d4', desc: "Today's high-leverage execution items" },
@@ -44,8 +60,10 @@ const horizonSelectFilter = document.getElementById('horizon-select-filter');
 function init() {
   loadTheme();
   loadData();
+  loadStreak();
   bindEvents();
   renderAll();
+  renderStreakUI();
   lucide.createIcons();
 }
 
@@ -67,6 +85,130 @@ function loadData() {
 
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+}
+
+// ── Streak Engine ──────────────────────────────────────────
+function getToday() {
+  return new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+}
+
+function loadStreak() {
+  const saved = localStorage.getItem(STREAK_KEY);
+  if (saved) {
+    try {
+      state.streak = JSON.parse(saved);
+    } catch (e) {
+      state.streak = { count: 0, lastDate: null };
+    }
+  } else {
+    state.streak = { count: 0, lastDate: null };
+  }
+  // Check if streak broke (missed a day)
+  const today = getToday();
+  if (state.streak.lastDate) {
+    const last = new Date(state.streak.lastDate);
+    const now = new Date(today);
+    const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+    if (diffDays > 1) {
+      // Streak broken — reset
+      state.streak = { count: 0, lastDate: null };
+      saveStreak();
+    }
+  }
+}
+
+function saveStreak() {
+  localStorage.setItem(STREAK_KEY, JSON.stringify(state.streak));
+}
+
+function checkAndUpdateStreak() {
+  const today = getToday();
+  const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
+
+  if (dailyTasks.length === 0) return;
+
+  const allDone = dailyTasks.every(t => t.completed);
+
+  if (allDone) {
+    if (state.streak.lastDate !== today) {
+      // New day completed — increment streak
+      state.streak.count++;
+      state.streak.lastDate = today;
+      saveStreak();
+
+      // Check if we just earned a new badge
+      const newBadge = STREAK_BADGES.find(b => b.days === state.streak.count);
+      if (newBadge) {
+        showToast(`🏆 Badge unlocked: ${newBadge.emoji} ${newBadge.name}!`, 'success');
+        triggerConfetti();
+      }
+    }
+  }
+
+  renderStreakUI();
+}
+
+function renderStreakUI() {
+  const streak = state.streak || { count: 0, lastDate: null };
+  const count = streak.count;
+
+  // Update counter text
+  const counterEl = document.getElementById('streak-counter');
+  if (counterEl) {
+    counterEl.textContent = count === 1 ? '1 Day' : `${count} Days`;
+  }
+
+  // Update emoji based on streak level
+  const emojiEl = document.getElementById('streak-emoji');
+  if (emojiEl) {
+    if (count >= 100) emojiEl.textContent = '👑';
+    else if (count >= 50) emojiEl.textContent = '💎';
+    else if (count >= 30) emojiEl.textContent = '🌟';
+    else if (count >= 7) emojiEl.textContent = '🔥';
+    else emojiEl.textContent = '🔥';
+  }
+
+  // Calculate progress to next badge
+  let nextBadge = STREAK_BADGES.find(b => b.days > count);
+  let prevBadge = [...STREAK_BADGES].reverse().find(b => b.days <= count);
+  const prevDays = prevBadge ? prevBadge.days : 0;
+  const nextDays = nextBadge ? nextBadge.days : STREAK_BADGES[STREAK_BADGES.length - 1].days;
+  const progress = nextBadge
+    ? ((count - prevDays) / (nextDays - prevDays)) * 100
+    : 100;
+
+  // Update progress bar
+  const fillEl = document.getElementById('streak-fill');
+  if (fillEl) fillEl.style.width = `${Math.min(progress, 100)}%`;
+
+  // Update label
+  const labelEl = document.getElementById('streak-badge-label');
+  if (labelEl) {
+    if (nextBadge) {
+      const remaining = nextBadge.days - count;
+      labelEl.textContent = `Next: ${nextBadge.emoji} ${nextBadge.name} (${remaining} day${remaining !== 1 ? 's' : ''} to go)`;
+    } else {
+      labelEl.textContent = '🎯 All milestones achieved!';
+    }
+  }
+
+  // Render badge circles
+  const badgesEl = document.getElementById('streak-badges');
+  if (badgesEl) {
+    badgesEl.innerHTML = '';
+    STREAK_BADGES.forEach((badge, idx) => {
+      const earned = count >= badge.days;
+      const isNext = !earned && (idx === 0 || count >= STREAK_BADGES[idx - 1].days);
+
+      const el = document.createElement('div');
+      el.className = `streak-badge ${earned ? 'earned' : isNext ? 'next' : 'locked'}`;
+      el.innerHTML = `
+        <span>${badge.emoji}</span>
+        <div class="streak-badge-tooltip">${badge.name}${earned ? ' ✓' : isNext ? ' (Next)' : ''}</div>
+      `;
+      badgesEl.appendChild(el);
+    });
+  }
 }
 
 // Theme handling
@@ -238,6 +380,11 @@ function toggleTaskCompletion(taskId) {
     showToast(`Completed: "${task.title}" 🎉`, 'success');
   } else {
     showToast(`Reopened: "${task.title}"`, 'info');
+  }
+
+  // Update streak after any daily task toggle
+  if (task.tier === 'daily') {
+    checkAndUpdateStreak();
   }
 
   renderAll();

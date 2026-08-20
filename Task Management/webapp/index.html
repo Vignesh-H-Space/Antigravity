@@ -82,16 +82,20 @@
       </nav>
 
       <div class="sidebar-footer">
-        <div class="streak-card">
+        <div class="streak-card" id="streak-card">
           <div class="streak-header">
-            <span class="streak-icon">🔥</span>
+            <span class="streak-icon" id="streak-emoji">🔥</span>
             <div>
               <div class="streak-title">Daily Streak</div>
-              <div class="streak-value" id="streak-counter">3 Days</div>
+              <div class="streak-value" id="streak-counter">0 Days</div>
             </div>
           </div>
           <div class="streak-progress-bar">
-            <div class="streak-fill" id="streak-fill" style="width: 75%"></div>
+            <div class="streak-fill" id="streak-fill" style="width: 0%"></div>
+          </div>
+          <div class="streak-badge-label" id="streak-badge-label">Next: 🏅 1 Week</div>
+          <div class="streak-badges" id="streak-badges">
+            <!-- Injected by JS -->
           </div>
         </div>
 
