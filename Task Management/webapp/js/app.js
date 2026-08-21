@@ -24,11 +24,11 @@ const STREAK_BADGES = [
 ];
 
 const TIERS = [
-  { id: 'daily', name: 'Daily Tasks', emoji: '🌅', color: '#06b6d4', desc: "Today's high-leverage execution items" },
+  { id: 'daily', name: 'Daily Tasks', emoji: '🌅', color: '#f59e0b', desc: "Today's high-leverage execution items" },
   { id: 'weekly', name: 'Weekly Milestones', emoji: '📅', color: '#8b5cf6', desc: 'Tactical milestones for this week' },
   { id: 'monthly', name: 'Monthly Goals', emoji: '🗓️', color: '#10b981', desc: 'Deliverables and focus areas for this month' },
-  { id: 'quarterly', name: 'Quarterly OKRs', emoji: '🎯', color: '#f59e0b', desc: '90-day objectives & key strategic results' },
-  { id: 'annual', name: 'Annual Vision', emoji: '🏆', color: '#ec4899', desc: 'North star pillars & yearly ambitions' }
+  { id: 'quarterly', name: 'Quarterly OKRs', emoji: '🎯', color: '#06b6d4', desc: '90-day objectives & key strategic results' },
+  { id: 'annual', name: 'Annual Vision', emoji: '🏆', color: '#f43f5e', desc: 'North star pillars & yearly ambitions' }
 ];
 
 let state = {
