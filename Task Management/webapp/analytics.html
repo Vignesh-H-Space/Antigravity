@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tesseract | Multi-Horizon Goal & Task Matrix</title>
-  <meta name="description" content="Tesseract: Multi-dimensional goal & task management across Daily, Weekly, Monthly, Quarterly, and Annual horizons with cascading alignment.">
+  <title>Productivity Analytics | Tesseract</title>
+  <meta name="description" content="Productivity Metrics & Performance Analytics across all 5 time horizons in Tesseract.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -68,8 +68,8 @@
           </div>
         </div>
 
-        <!-- Quarterly (hidden by default in General view) -->
-        <div class="horizon-card" data-horizon="quarterly" style="display:none;">
+        <!-- Quarterly -->
+        <div class="horizon-card" data-horizon="quarterly">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-quarterly">🎯 Quarterly</div>
             <span class="horizon-ratio" id="stat-ratio-quarterly">0/0</span>
@@ -82,8 +82,8 @@
           </div>
         </div>
 
-        <!-- Annual (hidden by default in General view) -->
-        <div class="horizon-card" data-horizon="annual" style="display:none;">
+        <!-- Annual -->
+        <div class="horizon-card" data-horizon="annual">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-annual">🏆 Annual</div>
             <span class="horizon-ratio" id="stat-ratio-annual">0/0</span>
@@ -97,65 +97,37 @@
         </div>
       </section>
 
-      <!-- Filter Controls Bar -->
-      <div class="filter-bar">
-        <div class="filter-group">
-          <span class="filter-label">Horizon:</span>
-          <select class="custom-select" id="horizon-select-filter">
-            <option value="general">🏠 Home (Daily, Weekly, Monthly)</option>
-            <option value="daily">🌅 Daily Tasks</option>
-            <option value="weekly">📅 Weekly Milestones</option>
-            <option value="monthly">🗓️ Monthly Goals</option>
-            <option value="quarterly">🎯 Quarterly OKRs</option>
-            <option value="annual">🏆 Annual Vision</option>
-            <option value="all">🌐 All 5 Horizons</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <span class="filter-label">Status:</span>
-          <div class="segmented-control" id="status-filter">
-            <button class="segment active" data-status="all">All</button>
-            <button class="segment" data-status="active">Incomplete</button>
-            <button class="segment" data-status="completed">Completed</button>
+      <!-- Productivity Analytics View -->
+      <section class="analytics-view" id="analytics-container">
+        <div class="analytics-grid">
+          <div class="metric-box">
+            <div class="metric-title">Overall Completion</div>
+            <div class="metric-large-value" id="analytic-overall-pct">0%</div>
+            <div class="metric-sub" id="analytic-overall-count">0 of 0 goals done</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-title">Daily Execution Rate</div>
+            <div class="metric-large-value highlight-cyan" id="analytic-daily-rate">0%</div>
+            <div class="metric-sub">Today's high-leverage focus</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-title">Strategic Alignment</div>
+            <div class="metric-large-value highlight-purple" id="analytic-alignment-score">88%</div>
+            <div class="metric-sub">Tasks linked to higher tiers</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-title">Urgent Tasks Open</div>
+            <div class="metric-large-value highlight-rose" id="analytic-urgent-open">0</div>
+            <div class="metric-sub">Immediate attention required</div>
           </div>
         </div>
 
-        <div class="filter-group">
-          <span class="filter-label">Category:</span>
-          <select class="custom-select" id="category-filter">
-            <option value="all">All Categories</option>
-            <option value="Product">Product</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Career">Career</option>
-            <option value="Finance">Finance</option>
-            <option value="Health">Health</option>
-            <option value="Personal">Personal</option>
-          </select>
+        <div class="breakdown-card">
+          <h3 class="breakdown-title"><i data-lucide="pie-chart"></i> Category Distribution & Progress</h3>
+          <div class="category-breakdown-list" id="category-breakdown-container">
+            <!-- Injected dynamically -->
+          </div>
         </div>
-
-        <div class="filter-group">
-          <span class="filter-label">Priority:</span>
-          <select class="custom-select" id="priority-filter">
-            <option value="all">All Priorities</option>
-            <option value="urgent">Urgent</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
-
-        <div class="filter-actions">
-          <button class="btn btn-ghost btn-sm" id="btn-export-markdown" title="Copy Markdown Summary to Clipboard">
-            <i data-lucide="clipboard-copy"></i>
-            <span>Export Markdown</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Tasks List Container -->
-      <section class="task-list-view" id="tasks-container">
-        <!-- Injected via JavaScript -->
       </section>
     </main>
   </div>

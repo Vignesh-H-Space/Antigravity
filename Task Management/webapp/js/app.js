@@ -34,7 +34,6 @@ const TIERS = [
 let state = {
   tasks: [],
   activeHorizon: 'general', // 'general' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'all'
-  activeView: 'list', // 'list' | 'cascade' | 'analytics'
   statusFilter: 'all', // 'all' | 'active' | 'completed'
   categoryFilter: 'all',
   priorityFilter: 'all',
@@ -43,24 +42,12 @@ let state = {
   profile: {
     name: 'Tesseract User',
     image: null
+  },
+  streak: {
+    count: 0,
+    lastDate: null
   }
 };
-
-// DOM Elements
-const tasksContainer = document.getElementById('tasks-container');
-const cascadeContainer = document.getElementById('cascade-container');
-const analyticsContainer = document.getElementById('analytics-container');
-const currentViewHeading = document.getElementById('current-view-heading');
-const currentViewDesc = document.getElementById('current-view-desc');
-const searchInput = document.getElementById('search-input');
-const clearSearchBtn = document.getElementById('clear-search');
-const taskModal = document.getElementById('task-modal');
-const taskForm = document.getElementById('task-form');
-const modalTitleText = document.getElementById('modal-title-text');
-const formParentSelect = document.getElementById('form-parent');
-const toastContainer = document.getElementById('toast-container');
-const horizonSelectFilter = document.getElementById('horizon-select-filter');
-const profileContainer = document.getElementById('profile-container');
 
 // Initialization
 function init() {
@@ -68,6 +55,31 @@ function init() {
   loadData();
   loadStreak();
   loadProfile();
+
+  // Read URL parameters on index.html (e.g. ?horizon=daily)
+  const urlParams = new URLSearchParams(window.location.search);
+  const horizonParam = urlParams.get('horizon');
+  if (horizonParam && ['general', 'daily', 'weekly', 'monthly', 'quarterly', 'annual', 'all'].includes(horizonParam)) {
+    state.activeHorizon = horizonParam;
+  }
+
+  // Inject shared layout components
+  const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+  if (typeof Components !== 'undefined') {
+    Components.renderSidebar(state.activeHorizon);
+    
+    let headerConfig = { title: 'All Goals & Tasks', subtitle: 'Holistic overview across all 5 strategic horizons.', showSearch: true };
+    if (page === 'cascade') {
+      headerConfig = { title: 'Strategic Goal Cascade', subtitle: 'Multi-horizon vertical alignment linking daily actions to annual vision.', showSearch: false };
+    } else if (page === 'analytics') {
+      headerConfig = { title: 'Productivity & Goal Analytics', subtitle: 'Comprehensive metric tracking and horizon performance.', showSearch: false };
+    } else if (page === 'profile') {
+      headerConfig = { title: 'Your Profile', subtitle: 'Stats, badges, and activity history.', showSearch: false };
+    }
+    Components.renderHeader(headerConfig);
+    Components.renderModalAndToasts();
+  }
+
   bindEvents();
   renderAll();
   renderStreakUI();
@@ -122,19 +134,8 @@ function loadStreak() {
       state.streak = { count: 0, lastDate: null };
     }
   } else {
-    state.streak = { count: 0, lastDate: null };
-  }
-  // Check if streak broke (missed a day)
-  const today = getToday();
-  if (state.streak.lastDate) {
-    const last = new Date(state.streak.lastDate);
-    const now = new Date(today);
-    const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-    if (diffDays > 1) {
-      // Streak broken — reset
-      state.streak = { count: 0, lastDate: null };
-      saveStreak();
-    }
+    // Derive initial streak from existing completed daily tasks
+    deriveInitialStreak();
   }
 }
 
@@ -142,128 +143,126 @@ function saveStreak() {
   localStorage.setItem(STREAK_KEY, JSON.stringify(state.streak));
 }
 
+function deriveInitialStreak() {
+  const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
+  const allDailyDone = dailyTasks.length > 0 && dailyTasks.every(t => t.completed);
+  if (allDailyDone) {
+    state.streak = { count: 1, lastDate: getToday() };
+  } else {
+    state.streak = { count: 0, lastDate: null };
+  }
+  saveStreak();
+}
+
 function checkAndUpdateStreak() {
   const today = getToday();
   const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
-
   if (dailyTasks.length === 0) return;
 
-  const allDone = dailyTasks.every(t => t.completed);
+  const allDailyDone = dailyTasks.every(t => t.completed);
 
-  if (allDone) {
+  if (allDailyDone) {
     if (state.streak.lastDate !== today) {
-      // New day completed — increment streak
-      state.streak.count++;
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      if (state.streak.lastDate === yesterday) {
+        state.streak.count += 1;
+      } else {
+        state.streak.count = 1;
+      }
       state.streak.lastDate = today;
       saveStreak();
-
-      // Check if we just earned a new badge
-      const newBadge = STREAK_BADGES.find(b => b.days === state.streak.count);
-      if (newBadge) {
-        showToast(`🏆 Badge unlocked: ${newBadge.emoji} ${newBadge.name}!`, 'success');
-        triggerConfetti();
-      }
+      triggerConfetti();
+      showToast(`🔥 Daily Streak updated! You're on a ${state.streak.count}-day streak!`, 'success');
+      renderStreakUI();
+    }
+  } else {
+    if (state.streak.lastDate === today) {
+      state.streak.count = Math.max(0, state.streak.count - 1);
+      state.streak.lastDate = null;
+      saveStreak();
+      renderStreakUI();
     }
   }
-
-  renderStreakUI();
 }
 
 function renderStreakUI() {
-  const streak = state.streak || { count: 0, lastDate: null };
-  const count = streak.count;
-
-  // Update counter text
+  const count = state.streak ? state.streak.count : 0;
   const counterEl = document.getElementById('streak-counter');
-  if (counterEl) {
-    counterEl.textContent = count === 1 ? '1 Day' : `${count} Days`;
-  }
-
-  // Update emoji based on streak level
-  const emojiEl = document.getElementById('streak-emoji');
-  if (emojiEl) {
-    if (count >= 100) emojiEl.textContent = '👑';
-    else if (count >= 50) emojiEl.textContent = '💎';
-    else if (count >= 30) emojiEl.textContent = '🌟';
-    else if (count >= 7) emojiEl.textContent = '🔥';
-    else emojiEl.textContent = '🔥';
-  }
-
-  // Calculate progress to next badge
-  let nextBadge = STREAK_BADGES.find(b => b.days > count);
-  let prevBadge = [...STREAK_BADGES].reverse().find(b => b.days <= count);
-  const prevDays = prevBadge ? prevBadge.days : 0;
-  const nextDays = nextBadge ? nextBadge.days : STREAK_BADGES[STREAK_BADGES.length - 1].days;
-  const progress = nextBadge
-    ? ((count - prevDays) / (nextDays - prevDays)) * 100
-    : 100;
-
-  // Update progress bar
   const fillEl = document.getElementById('streak-fill');
-  if (fillEl) fillEl.style.width = `${Math.min(progress, 100)}%`;
-
-  // Update label
   const labelEl = document.getElementById('streak-badge-label');
+  const badgeContainer = document.getElementById('streak-badges');
+
+  if (counterEl) counterEl.textContent = `${count} Day${count !== 1 ? 's' : ''}`;
+
+  let nextBadge = STREAK_BADGES.find(b => b.days > count) || STREAK_BADGES[STREAK_BADGES.length - 1];
+  let prevDays = 0;
+  const currBadgeIndex = STREAK_BADGES.findIndex(b => b.days > count);
+  if (currBadgeIndex > 0) {
+    prevDays = STREAK_BADGES[currBadgeIndex - 1].days;
+  }
+
+  const progressRange = nextBadge.days - prevDays;
+  const progressCurrent = count - prevDays;
+  const pct = Math.min(100, Math.max(0, Math.round((progressCurrent / progressRange) * 100)));
+
+  if (fillEl) fillEl.style.width = `${pct}%`;
   if (labelEl) {
-    if (nextBadge) {
-      const remaining = nextBadge.days - count;
-      labelEl.textContent = `Next: ${nextBadge.emoji} ${nextBadge.name} (${remaining} day${remaining !== 1 ? 's' : ''} to go)`;
+    if (count >= 365) {
+      labelEl.textContent = '🏆 Grandmaster (1 Year Achieved!)';
     } else {
-      labelEl.textContent = '🎯 All milestones achieved!';
+      const daysLeft = nextBadge.days - count;
+      labelEl.textContent = `Next: ${nextBadge.emoji} ${nextBadge.name} (${daysLeft}d left)`;
     }
   }
 
-  // Render badge circles
-  const badgesEl = document.getElementById('streak-badges');
-  if (badgesEl) {
-    badgesEl.innerHTML = '';
+  if (badgeContainer) {
+    badgeContainer.innerHTML = '';
     STREAK_BADGES.forEach((badge, idx) => {
       const earned = count >= badge.days;
       const isNext = !earned && (idx === 0 || count >= STREAK_BADGES[idx - 1].days);
-
-      const el = document.createElement('div');
-      el.className = `streak-badge ${earned ? 'earned' : isNext ? 'next' : 'locked'}`;
-      el.innerHTML = `
-        <span>${badge.emoji}</span>
-        <div class="streak-badge-tooltip">${badge.name}${earned ? ' ✓' : isNext ? ' (Next)' : ''}</div>
-      `;
-      badgesEl.appendChild(el);
+      const span = document.createElement('span');
+      span.className = `streak-badge-pill ${earned ? 'earned' : isNext ? 'next' : 'locked'}`;
+      span.textContent = badge.emoji;
+      span.title = earned
+        ? `Unlocked: ${badge.name} (${badge.days} days streak)`
+        : isNext
+        ? `Next up: ${badge.name} (${badge.days - count} days to go!)`
+        : `Locked: ${badge.name} (${badge.days} days streak)`;
+      badgeContainer.appendChild(span);
     });
   }
 }
 
-// Theme handling
+// ── Theme Switcher ──────────────────────────────────────────
 function loadTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem(THEME_KEY, next);
-  lucide.createIcons();
 }
 
-// Set Horizon Filter and synchronize UI
+// Horizon Navigation
 function setHorizonFilter(horizon) {
+  const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+  if (page !== 'index') {
+    window.location.href = `index.html?horizon=${horizon}`;
+    return;
+  }
+
   state.activeHorizon = horizon;
-  state.activeView = 'list';
 
   // Sync sidebar
   document.querySelectorAll('.nav-menu button[data-horizon]').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-horizon') === horizon);
   });
-  document.getElementById('btn-view-cascade').classList.remove('active');
-  document.getElementById('btn-view-analytics').classList.remove('active');
-
-  // Sync chips
-  document.querySelectorAll('.horizon-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.getAttribute('data-horizon') === horizon);
-  });
 
   // Sync dropdown
+  const horizonSelectFilter = document.getElementById('horizon-select-filter');
   if (horizonSelectFilter) {
     horizonSelectFilter.value = horizon;
   }
@@ -280,41 +279,19 @@ function bindEvents() {
     });
   });
 
-  // Horizon Quick Chips
-  document.querySelectorAll('.horizon-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      setHorizonFilter(chip.getAttribute('data-horizon'));
-    });
-  });
-
   // Horizon Dropdown Select Filter
+  const horizonSelectFilter = document.getElementById('horizon-select-filter');
   if (horizonSelectFilter) {
     horizonSelectFilter.addEventListener('change', (e) => {
       setHorizonFilter(e.target.value);
     });
   }
 
-  // Secondary Views
-  document.getElementById('btn-view-cascade').addEventListener('click', () => {
-    document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-view-cascade').classList.add('active');
-    state.activeView = 'cascade';
-    renderAll();
-  });
-
-  document.getElementById('btn-view-analytics').addEventListener('click', () => {
-    document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-view-analytics').classList.add('active');
-    state.activeView = 'analytics';
-    renderAll();
-  });
-
   // Horizon Card click
   document.querySelectorAll('.horizon-card').forEach(card => {
     card.addEventListener('click', () => {
       const horizon = card.getAttribute('data-horizon');
-      const tabBtn = document.getElementById(`tab-${horizon}`);
-      if (tabBtn) tabBtn.click();
+      setHorizonFilter(horizon);
     });
   });
 
@@ -329,63 +306,77 @@ function bindEvents() {
   });
 
   // Dropdown Filters
-  document.getElementById('category-filter').addEventListener('change', (e) => {
-    state.categoryFilter = e.target.value;
-    renderTaskList();
-  });
+  const categoryFilter = document.getElementById('category-filter');
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', (e) => {
+      state.categoryFilter = e.target.value;
+      renderTaskList();
+    });
+  }
 
-  document.getElementById('priority-filter').addEventListener('change', (e) => {
-    state.priorityFilter = e.target.value;
-    renderTaskList();
-  });
+  const priorityFilter = document.getElementById('priority-filter');
+  if (priorityFilter) {
+    priorityFilter.addEventListener('change', (e) => {
+      state.priorityFilter = e.target.value;
+      renderTaskList();
+    });
+  }
 
   // Search
-  searchInput.addEventListener('input', (e) => {
-    state.searchQuery = e.target.value.trim().toLowerCase();
-    clearSearchBtn.style.display = state.searchQuery ? 'block' : 'none';
-    renderTaskList();
-  });
+  const searchInput = document.getElementById('search-input');
+  const clearSearchBtn = document.getElementById('clear-search');
+  if (searchInput && clearSearchBtn) {
+    searchInput.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value.trim().toLowerCase();
+      clearSearchBtn.style.display = state.searchQuery ? 'block' : 'none';
+      renderTaskList();
+    });
 
-  clearSearchBtn.addEventListener('click', () => {
-    searchInput.value = '';
-    state.searchQuery = '';
-    clearSearchBtn.style.display = 'none';
-    renderTaskList();
-    searchInput.focus();
-  });
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      state.searchQuery = '';
+      clearSearchBtn.style.display = 'none';
+      renderTaskList();
+      searchInput.focus();
+    });
+  }
 
   // Keyboard shortcut '/' to search & 'N' for new task
   window.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement !== searchInput && !taskModal.style.display.includes('block')) {
+    const taskModal = document.getElementById('task-modal');
+    if (e.key === '/' && searchInput && document.activeElement !== searchInput && (!taskModal || taskModal.style.display === 'none')) {
       e.preventDefault();
       searchInput.focus();
     }
-    if ((e.key === 'n' || e.key === 'N') && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && taskModal.style.display === 'none') {
+    if ((e.key === 'n' || e.key === 'N') && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && (!taskModal || taskModal.style.display === 'none')) {
       e.preventDefault();
       openAddModal();
     }
-    if (e.key === 'Escape' && taskModal.style.display !== 'none') {
+    if (e.key === 'Escape' && taskModal && taskModal.style.display !== 'none') {
       closeModal();
     }
   });
 
-  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-  document.getElementById('btn-open-add-modal').addEventListener('click', () => openAddModal());
-  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
-  document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
-  document.getElementById('btn-reset-data').addEventListener('click', resetToSampleData);
-  document.getElementById('btn-export-json').addEventListener('click', exportJSON);
-  document.getElementById('btn-export-markdown').addEventListener('click', exportMarkdown);
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
 
-  // Profile page
-  document.getElementById('btn-profile').addEventListener('click', () => {
-    state.activeView = 'profile';
-    renderAll();
-  });
-  document.getElementById('btn-profile-back').addEventListener('click', () => {
-    state.activeView = 'list';
-    renderAll();
-  });
+  const btnOpenAddModal = document.getElementById('btn-open-add-modal');
+  if (btnOpenAddModal) btnOpenAddModal.addEventListener('click', () => openAddModal());
+
+  const modalCloseBtn = document.getElementById('modal-close-btn');
+  if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+  if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+
+  const btnResetData = document.getElementById('btn-reset-data');
+  if (btnResetData) btnResetData.addEventListener('click', resetToSampleData);
+
+  const btnExportJson = document.getElementById('btn-export-json');
+  if (btnExportJson) btnExportJson.addEventListener('click', exportJSON);
+
+  const btnExportMd = document.getElementById('btn-export-markdown');
+  if (btnExportMd) btnExportMd.addEventListener('click', exportMarkdown);
 
   // Profile Edit
   const profileAvatarBtn = document.getElementById('profile-avatar-large');
@@ -401,7 +392,8 @@ function bindEvents() {
         reader.onload = (event) => {
           state.profile.image = event.target.result;
           saveProfile();
-          renderProfileView(); // re-render
+          renderProfileView();
+          updateHeaderAvatar();
         };
         reader.readAsDataURL(file);
       }
@@ -422,11 +414,14 @@ function bindEvents() {
 
   const importTrigger = document.getElementById('btn-import-trigger');
   const importInput = document.getElementById('import-file-input');
-  importTrigger.addEventListener('click', () => importInput.click());
-  importInput.addEventListener('change', handleImportJSON);
+  if (importTrigger && importInput) {
+    importTrigger.addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', handleImportJSON);
+  }
 
   // Form Submit
-  taskForm.addEventListener('submit', handleFormSubmit);
+  const taskForm = document.getElementById('task-form');
+  if (taskForm) taskForm.addEventListener('submit', handleFormSubmit);
 }
 
 // Toggle Task Completion
@@ -459,7 +454,6 @@ function deleteTask(taskId) {
   if (!task) return;
 
   if (confirm(`Are you sure you want to delete "${task.title}"?`)) {
-    // Remove task and unlink children
     state.tasks = state.tasks.filter(t => t.id !== taskId);
     state.tasks.forEach(t => {
       if (t.parentId === taskId) t.parentId = null;
@@ -482,59 +476,48 @@ function triggerConfetti() {
   }
 }
 
-// Render Functions
-function renderAll() {
-  // Sync all horizon controls to current state
-  syncHorizonUI();
+// Header Profile Avatar Update
+function updateHeaderAvatar() {
+  const headerImg = document.getElementById('header-avatar-img');
+  const headerFallback = document.getElementById('header-avatar-fallback');
+  if (headerImg && headerFallback) {
+    if (state.profile && state.profile.image) {
+      headerImg.src = state.profile.image;
+      headerImg.style.display = 'block';
+      headerFallback.style.display = 'none';
+    } else {
+      headerImg.style.display = 'none';
+      headerFallback.style.display = 'block';
+    }
+  }
+}
 
+// Main Render Function
+function renderAll() {
+  const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+
+  updateHeaderAvatar();
   updateSidebarBadges();
-  updateProgressCards();
-  
-  if (state.activeView === 'list') {
-    tasksContainer.style.display = 'block';
-    cascadeContainer.style.display = 'none';
-    analyticsContainer.style.display = 'none';
-    profileContainer.style.display = 'none';
-    document.querySelector('.filter-bar').style.display = 'flex';
-    document.getElementById('progress-summary-container').style.display = 'grid';
+  renderStreakUI();
+
+  if (page === 'index') {
+    syncHorizonUI();
     updateHeaderTitle();
+    updateProgressCards();
     renderTaskList();
-  } else if (state.activeView === 'cascade') {
-    tasksContainer.style.display = 'none';
-    cascadeContainer.style.display = 'block';
-    analyticsContainer.style.display = 'none';
-    profileContainer.style.display = 'none';
-    document.querySelector('.filter-bar').style.display = 'none';
-    document.getElementById('progress-summary-container').style.display = 'none';
-    currentViewHeading.textContent = 'Strategic Goal Cascade';
-    currentViewDesc.textContent = 'Multi-horizon vertical alignment linking daily actions to annual vision.';
+  } else if (page === 'cascade') {
     renderCascadeView();
-  } else if (state.activeView === 'analytics') {
-    tasksContainer.style.display = 'none';
-    cascadeContainer.style.display = 'none';
-    analyticsContainer.style.display = 'block';
-    profileContainer.style.display = 'none';
-    document.querySelector('.filter-bar').style.display = 'none';
-    document.getElementById('progress-summary-container').style.display = 'grid';
-    currentViewHeading.textContent = 'Productivity & Goal Analytics';
-    currentViewDesc.textContent = 'Comprehensive metric tracking and horizon performance.';
+  } else if (page === 'analytics') {
+    updateProgressCards();
     renderAnalyticsView();
-  } else if (state.activeView === 'profile') {
-    tasksContainer.style.display = 'none';
-    cascadeContainer.style.display = 'none';
-    analyticsContainer.style.display = 'none';
-    profileContainer.style.display = 'block';
-    document.querySelector('.filter-bar').style.display = 'none';
-    document.getElementById('progress-summary-container').style.display = 'none';
-    currentViewHeading.textContent = 'Your Profile';
-    currentViewDesc.textContent = 'Stats, badges, and activity history.';
+  } else if (page === 'profile') {
     renderProfileView();
   }
 
   lucide.createIcons();
 }
 
-// Keep sidebar tabs, filter dropdown, and header all in sync
+// Keep sidebar tabs and filter dropdown in sync
 function syncHorizonUI() {
   const h = state.activeHorizon;
 
@@ -551,17 +534,21 @@ function syncHorizonUI() {
 }
 
 function updateHeaderTitle() {
+  const heading = document.getElementById('current-view-heading');
+  const desc = document.getElementById('current-view-desc');
+  if (!heading || !desc) return;
+
   if (state.activeHorizon === 'general') {
-    currentViewHeading.textContent = 'Home';
-    currentViewDesc.textContent = 'Your daily, weekly, and monthly goals at a glance.';
+    heading.textContent = 'Home';
+    desc.textContent = 'Your daily, weekly, and monthly goals at a glance.';
   } else if (state.activeHorizon === 'all') {
-    currentViewHeading.textContent = '🌐 All 5 Strategic Horizons';
-    currentViewDesc.textContent = 'Holistic overview across all 5 strategic time horizons (Daily to Annual).';
+    heading.textContent = '🌐 All 5 Strategic Horizons';
+    desc.textContent = 'Holistic overview across all 5 strategic time horizons (Daily to Annual).';
   } else {
     const tierObj = TIERS.find(t => t.id === state.activeHorizon);
     if (tierObj) {
-      currentViewHeading.textContent = `${tierObj.emoji} ${tierObj.name}`;
-      currentViewDesc.textContent = tierObj.desc;
+      heading.textContent = `${tierObj.emoji} ${tierObj.name}`;
+      desc.textContent = tierObj.desc;
     }
   }
 }
@@ -571,7 +558,9 @@ function updateSidebarBadges() {
   const badgeGeneral = document.getElementById('badge-general');
   if (badgeGeneral) badgeGeneral.textContent = generalCount;
 
-  document.getElementById('badge-all').textContent = state.tasks.length;
+  const badgeAll = document.getElementById('badge-all');
+  if (badgeAll) badgeAll.textContent = state.tasks.length;
+
   TIERS.forEach(t => {
     const count = state.tasks.filter(task => task.tier === t.id).length;
     const badge = document.getElementById(`badge-${t.id}`);
@@ -595,9 +584,11 @@ function updateProgressCards() {
     if (pctEl) pctEl.textContent = `${pct}%`;
     if (barEl) barEl.style.width = `${pct}%`;
 
-    // Dynamic card visibility based on activeHorizon
+    const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
     if (cardEl) {
-      if (state.activeHorizon === 'general') {
+      if (page === 'analytics') {
+        cardEl.style.display = 'block';
+      } else if (state.activeHorizon === 'general') {
         cardEl.style.display = ['daily', 'weekly', 'monthly'].includes(t.id) ? 'block' : 'none';
       } else if (state.activeHorizon === 'all') {
         cardEl.style.display = 'block';
@@ -610,6 +601,8 @@ function updateProgressCards() {
 
 // Render Task List View
 function renderTaskList() {
+  const tasksContainer = document.getElementById('tasks-container');
+  if (!tasksContainer) return;
   tasksContainer.innerHTML = '';
 
   let filtered = state.tasks.filter(task => {
@@ -738,6 +731,7 @@ function createTaskCardElement(task) {
 // Goal Cascade Tree View
 function renderCascadeView() {
   const container = document.getElementById('tree-content');
+  if (!container) return;
   container.innerHTML = '';
 
   const annualGoals = state.tasks.filter(t => t.tier === 'annual');
@@ -797,11 +791,14 @@ function renderCascadeSubgoal(goal) {
 
 // Analytics View
 function renderAnalyticsView() {
+  const overallPctEl = document.getElementById('analytic-overall-pct');
+  if (!overallPctEl) return;
+
   const total = state.tasks.length;
   const completed = state.tasks.filter(t => t.completed).length;
   const overallPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  document.getElementById('analytic-overall-pct').textContent = `${overallPct}%`;
+  overallPctEl.textContent = `${overallPct}%`;
   document.getElementById('analytic-overall-count').textContent = `${completed} of ${total} goals done`;
 
   const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
@@ -818,6 +815,7 @@ function renderAnalyticsView() {
 
   // Category breakdown
   const catContainer = document.getElementById('category-breakdown-container');
+  if (!catContainer) return;
   catContainer.innerHTML = '';
   const categories = ['Product', 'Engineering', 'Career', 'Finance', 'Health', 'Personal'];
 
@@ -845,12 +843,17 @@ function renderAnalyticsView() {
 
 // Modal Form handling
 function openAddModal(defaultTier = null) {
+  const taskModal = document.getElementById('task-modal');
+  const taskForm = document.getElementById('task-form');
+  const modalTitleText = document.getElementById('modal-title-text');
+  if (!taskModal || !taskForm) return;
+
   state.editingTaskId = null;
-  modalTitleText.textContent = 'Create Goal / Task';
+  if (modalTitleText) modalTitleText.textContent = 'Create Goal / Task';
   taskForm.reset();
   document.getElementById('task-id-input').value = '';
   if (defaultTier) document.getElementById('form-tier').value = defaultTier;
-  else if (state.activeHorizon !== 'all') document.getElementById('form-tier').value = state.activeHorizon;
+  else if (state.activeHorizon !== 'all' && state.activeHorizon !== 'general') document.getElementById('form-tier').value = state.activeHorizon;
 
   populateParentGoalDropdown();
   taskModal.style.display = 'flex';
@@ -858,11 +861,13 @@ function openAddModal(defaultTier = null) {
 }
 
 function openEditModal(taskId) {
+  const taskModal = document.getElementById('task-modal');
+  const modalTitleText = document.getElementById('modal-title-text');
   const task = state.tasks.find(t => t.id === taskId);
-  if (!task) return;
+  if (!task || !taskModal) return;
 
   state.editingTaskId = taskId;
-  modalTitleText.textContent = 'Edit Goal / Task';
+  if (modalTitleText) modalTitleText.textContent = 'Edit Goal / Task';
   document.getElementById('task-id-input').value = task.id;
   document.getElementById('form-tier').value = task.tier;
   document.getElementById('form-title').value = task.title;
@@ -877,11 +882,14 @@ function openEditModal(taskId) {
 }
 
 function closeModal() {
-  taskModal.style.display = 'none';
+  const taskModal = document.getElementById('task-modal');
+  if (taskModal) taskModal.style.display = 'none';
   state.editingTaskId = null;
 }
 
 function populateParentGoalDropdown(selectedParentId = null, currentTaskId = null) {
+  const formParentSelect = document.getElementById('form-parent');
+  if (!formParentSelect) return;
   formParentSelect.innerHTML = '<option value="">None (Independent Goal)</option>';
   // Higher tiers to link to
   const potentialParents = state.tasks.filter(t => t.id !== currentTaskId && (t.tier === 'annual' || t.tier === 'quarterly' || t.tier === 'monthly' || t.tier === 'weekly'));
@@ -1008,6 +1016,9 @@ function exportMarkdown() {
 
 // ── Profile View ──────────────────────────────────────────
 function renderProfileView() {
+  const profileContainer = document.getElementById('profile-container');
+  if (!profileContainer) return;
+
   const tasks = state.tasks;
   const streak = state.streak || { count: 0, lastDate: null };
   const profile = state.profile || { name: 'Tesseract User', image: null };
@@ -1032,118 +1043,135 @@ function renderProfileView() {
   else if (completed.length > 0) tagline = 'Initiator';
 
   // Populate hero
-  document.getElementById('profile-name').textContent = profile.name;
-  document.getElementById('profile-tagline').textContent = tagline;
+  const profileNameEl = document.getElementById('profile-name');
+  const profileTaglineEl = document.getElementById('profile-tagline');
+  if (profileNameEl) profileNameEl.textContent = profile.name;
+  if (profileTaglineEl) profileTaglineEl.textContent = tagline;
   
   const avatarImg = document.getElementById('profile-avatar-img');
   const avatarFallback = document.getElementById('profile-avatar-fallback');
-  if (profile.image) {
-    avatarImg.src = profile.image;
-    avatarImg.style.display = 'block';
-    avatarFallback.style.display = 'none';
-  } else {
-    avatarImg.style.display = 'none';
-    avatarFallback.style.display = 'block';
+  if (avatarImg && avatarFallback) {
+    if (profile.image) {
+      avatarImg.src = profile.image;
+      avatarImg.style.display = 'block';
+      avatarFallback.style.display = 'none';
+    } else {
+      avatarImg.style.display = 'none';
+      avatarFallback.style.display = 'block';
+    }
   }
 
   // Member since (earliest createdAt)
   const dates = tasks.map(t => t.createdAt).filter(Boolean).sort();
-  if (dates.length > 0) {
+  const joinedDateEl = document.getElementById('profile-joined-date');
+  if (dates.length > 0 && joinedDateEl) {
     const d = new Date(dates[0]);
-    document.getElementById('profile-joined-date').textContent = `Member since ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+    joinedDateEl.textContent = `Member since ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
   }
 
   // Stats cards
-  document.getElementById('pstat-total-tasks').textContent = total;
-  document.getElementById('pstat-completed').textContent = completed.length;
-  document.getElementById('pstat-completion-rate').textContent = `${rate}%`;
-  document.getElementById('pstat-streak').textContent = streak.count;
-  document.getElementById('pstat-best-streak').textContent = bestStreak;
+  const elTotal = document.getElementById('pstat-total-tasks');
+  const elCompleted = document.getElementById('pstat-completed');
+  const elRate = document.getElementById('pstat-completion-rate');
+  const elStreak = document.getElementById('pstat-streak');
+  const elBestStreak = document.getElementById('pstat-best-streak');
+
+  if (elTotal) elTotal.textContent = total;
+  if (elCompleted) elCompleted.textContent = completed.length;
+  if (elRate) elRate.textContent = `${rate}%`;
+  if (elStreak) elStreak.textContent = streak.count;
+  if (elBestStreak) elBestStreak.textContent = bestStreak;
 
   // Badge showcase
   const badgeContainer = document.getElementById('profile-badge-showcase');
-  badgeContainer.innerHTML = '';
-  const count = streak.count;
+  if (badgeContainer) {
+    badgeContainer.innerHTML = '';
+    const count = streak.count;
 
-  STREAK_BADGES.forEach((badge, idx) => {
-    const earned = count >= badge.days;
-    const isNext = !earned && (idx === 0 || count >= STREAK_BADGES[idx - 1].days);
+    STREAK_BADGES.forEach((badge, idx) => {
+      const earned = count >= badge.days;
+      const isNext = !earned && (idx === 0 || count >= STREAK_BADGES[idx - 1].days);
 
-    const remaining = badge.days - count;
-    let statusText = '';
-    let statusClass = '';
-    if (earned) {
-      statusText = '✓ Earned';
-      statusClass = 'earned';
-    } else if (isNext) {
-      statusText = `${remaining} day${remaining !== 1 ? 's' : ''} to go`;
-      statusClass = 'next';
-    } else {
-      statusText = `${badge.days} days`;
-      statusClass = 'locked';
-    }
+      const remaining = badge.days - count;
+      let statusText = '';
+      let statusClass = '';
+      if (earned) {
+        statusText = '✓ Earned';
+        statusClass = 'earned';
+      } else if (isNext) {
+        statusText = `${remaining} day${remaining !== 1 ? 's' : ''} to go`;
+        statusClass = 'next';
+      } else {
+        statusText = `${badge.days} days`;
+        statusClass = 'locked';
+      }
 
-    const el = document.createElement('div');
-    el.className = `profile-badge-item ${statusClass}`;
-    el.innerHTML = `
-      <span class="badge-emoji">${badge.emoji}</span>
-      <span class="badge-name">${badge.name}</span>
-      <span class="badge-days">${badge.days} day streak</span>
-      <span class="badge-status">${statusText}</span>
-    `;
-    badgeContainer.appendChild(el);
-  });
+      const el = document.createElement('div');
+      el.className = `profile-badge-item ${statusClass}`;
+      el.innerHTML = `
+        <span class="badge-emoji">${badge.emoji}</span>
+        <span class="badge-name">${badge.name}</span>
+        <span class="badge-days">${badge.days} day streak</span>
+        <span class="badge-status">${statusText}</span>
+      `;
+      badgeContainer.appendChild(el);
+    });
+  }
 
   // Horizon breakdown
   const breakdownContainer = document.getElementById('profile-horizon-breakdown');
-  breakdownContainer.innerHTML = '';
-  TIERS.forEach(tier => {
-    const tierTasks = tasks.filter(t => t.tier === tier.id);
-    const tierDone = tierTasks.filter(t => t.completed).length;
-    const tierTotal = tierTasks.length;
-    const pct = tierTotal > 0 ? Math.round((tierDone / tierTotal) * 100) : 0;
+  if (breakdownContainer) {
+    breakdownContainer.innerHTML = '';
+    TIERS.forEach(tier => {
+      const tierTasks = tasks.filter(t => t.tier === tier.id);
+      const tierDone = tierTasks.filter(t => t.completed).length;
+      const tierTotal = tierTasks.length;
+      const pct = tierTotal > 0 ? Math.round((tierDone / tierTotal) * 100) : 0;
 
-    const row = document.createElement('div');
-    row.className = 'profile-horizon-row';
-    row.innerHTML = `
-      <span class="profile-horizon-label">${tier.emoji} ${tier.name}</span>
-      <div class="profile-horizon-bar-track">
-        <div class="profile-horizon-bar-fill" style="width: ${pct}%; background: ${tier.color};"></div>
-      </div>
-      <span class="profile-horizon-pct">${tierDone}/${tierTotal} (${pct}%)</span>
-    `;
-    breakdownContainer.appendChild(row);
-  });
+      const row = document.createElement('div');
+      row.className = 'profile-horizon-row';
+      row.innerHTML = `
+        <span class="profile-horizon-label">${tier.emoji} ${tier.name}</span>
+        <div class="profile-horizon-bar-track">
+          <div class="profile-horizon-bar-fill" style="width: ${pct}%; background: ${tier.color};"></div>
+        </div>
+        <span class="profile-horizon-pct">${tierDone}/${tierTotal} (${pct}%)</span>
+      `;
+      breakdownContainer.appendChild(row);
+    });
+  }
 
   // Recent activity (completed tasks, sorted by completedAt)
   const activityContainer = document.getElementById('profile-activity-list');
-  activityContainer.innerHTML = '';
+  if (activityContainer) {
+    activityContainer.innerHTML = '';
 
-  const recentCompleted = tasks
-    .filter(t => t.completedAt)
-    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
-    .slice(0, 15);
+    const recentCompleted = tasks
+      .filter(t => t.completedAt)
+      .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+      .slice(0, 15);
 
-  if (recentCompleted.length === 0) {
-    activityContainer.innerHTML = '<div class="profile-empty-activity">No completed tasks yet. Start checking off your goals!</div>';
-  } else {
-    recentCompleted.forEach(task => {
-      const tier = TIERS.find(t => t.id === task.tier);
-      const when = new Date(task.completedAt);
-      const timeAgo = getTimeAgo(when);
+    if (recentCompleted.length === 0) {
+      activityContainer.innerHTML = '<div class="profile-empty-activity">No completed tasks yet. Start checking off your goals!</div>';
+    } else {
+      recentCompleted.forEach(task => {
+        const tier = TIERS.find(t => t.id === task.tier);
+        const when = new Date(task.completedAt);
+        const timeAgo = getTimeAgo(when);
 
-      const item = document.createElement('div');
-      item.className = 'profile-activity-item';
-      item.innerHTML = `
-        <div class="profile-activity-icon completed">✅</div>
-        <div class="profile-activity-text">
-          <span>${escapeHTML(task.title)}</span>
-          <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">${tier ? tier.emoji : ''}</span>
-        </div>
-        <div class="profile-activity-time">${timeAgo}</div>
-      `;
-      activityContainer.appendChild(item);
-    });
+        const item = document.createElement('div');
+        item.className = 'profile-activity-item';
+        item.innerHTML = `
+          <div class="profile-activity-icon completed">✅</div>
+          <div class="profile-activity-text">
+            <span>${escapeHTML(task.title)}</span>
+            <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">${tier ? tier.emoji : ''}</span>
+          </div>
+          <div class="profile-activity-time">${timeAgo}</div>
+        `;
+        activityContainer.appendChild(item);
+      });
+    }
   }
 }
 
@@ -1172,6 +1200,9 @@ function resetToSampleData() {
 
 // Helper utilities
 function showToast(message, type = 'info') {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+
   const toast = document.createElement('div');
   toast.className = 'toast';
   const icon = type === 'success' ? 'check-circle' : 'info';
