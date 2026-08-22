@@ -81,6 +81,7 @@ function init() {
   }
 
   bindEvents();
+  FocusEngine.init();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
@@ -596,6 +597,9 @@ function renderHomeCommandHero() {
         <div class="spotlight-task-meta">
           <span class="meta-pill prio-pill prio-${topTask.priority}">${topTask.priority}</span>
           <span class="meta-pill category-pill">#${escapeHTML(topTask.category || 'General')}</span>
+          <button class="btn btn-secondary btn-sm" onclick="FocusEngine.open('${topTask.id}')" title="Start Deep Work Focus">
+            <i data-lucide="zap"></i> <span>Focus</span>
+          </button>
           <button class="spotlight-action-btn" onclick="toggleTaskCompletion('${topTask.id}')">
             <i data-lucide="check"></i> <span>Complete</span>
           </button>
@@ -607,9 +611,14 @@ function renderHomeCommandHero() {
           <span>🎉</span>
           <span>All high-priority goals crushed for now! Take a breath or set a new milestone.</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('daily')">
-          <i data-lucide="plus"></i> <span>Add New Goal</span>
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="FocusEngine.open()">
+            <i data-lucide="zap"></i> <span>Deep Work Sprint</span>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openAddModal('daily')">
+            <i data-lucide="plus"></i> <span>Add New Goal</span>
+          </button>
+        </div>
       `;
     }
   }
@@ -805,6 +814,7 @@ function createTaskCardElement(task) {
       <div class="task-header-row">
         <div class="task-title">${escapeHTML(task.title)}</div>
         <div class="task-actions">
+          <button class="action-btn focus-btn" title="Focus (Deep Work)" data-id="${task.id}"><i data-lucide="zap"></i></button>
           <button class="action-btn edit-btn" title="Edit Task" data-id="${task.id}"><i data-lucide="edit-2"></i></button>
           <button class="action-btn delete-btn" title="Delete Task" data-id="${task.id}"><i data-lucide="trash-2"></i></button>
         </div>
@@ -826,7 +836,8 @@ function createTaskCardElement(task) {
   const chk = card.querySelector(`#chk-${task.id}`);
   chk.addEventListener('change', () => toggleTaskCompletion(task.id));
 
-  // Edit / Delete events
+  // Focus / Edit / Delete events
+  card.querySelector('.focus-btn').addEventListener('click', () => FocusEngine.open(task.id));
   card.querySelector('.edit-btn').addEventListener('click', () => openEditModal(task.id));
   card.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
 
@@ -910,6 +921,18 @@ function renderAnalyticsView() {
   const dailyDone = dailyTasks.filter(t => t.completed).length;
   const dailyRate = dailyTasks.length > 0 ? Math.round((dailyDone / dailyTasks.length) * 100) : 0;
   document.getElementById('analytic-daily-rate').textContent = `${dailyRate}%`;
+
+  // Deep work stats
+  const focusHoursEl = document.getElementById('analytic-focus-hours');
+  const focusSessionsEl = document.getElementById('analytic-focus-sessions');
+  if (focusHoursEl && typeof FocusEngine !== 'undefined') {
+    const hours = FocusEngine.getTotalHours();
+    const sessions = FocusEngine.getSessions();
+    focusHoursEl.textContent = `${hours}h`;
+    if (focusSessionsEl) {
+      focusSessionsEl.textContent = `${sessions.length} focus session${sessions.length === 1 ? '' : 's'} completed`;
+    }
+  }
 
   const linkedCount = state.tasks.filter(t => t.parentId !== null || t.tier === 'annual').length;
   const alignmentScore = total > 0 ? Math.round((linkedCount / total) * 100) : 0;
@@ -1179,13 +1202,16 @@ function renderProfileView() {
   const elCompleted = document.getElementById('pstat-completed');
   const elRate = document.getElementById('pstat-completion-rate');
   const elStreak = document.getElementById('pstat-streak');
-  const elBestStreak = document.getElementById('pstat-best-streak');
-
   if (elTotal) elTotal.textContent = total;
   if (elCompleted) elCompleted.textContent = completed.length;
   if (elRate) elRate.textContent = `${rate}%`;
   if (elStreak) elStreak.textContent = streak.count;
   if (elBestStreak) elBestStreak.textContent = bestStreak;
+
+  const elDeepWork = document.getElementById('pstat-deep-work');
+  if (elDeepWork && typeof FocusEngine !== 'undefined') {
+    elDeepWork.textContent = `${FocusEngine.getTotalHours()}h`;
+  }
 
   // Badge showcase
   const badgeContainer = document.getElementById('profile-badge-showcase');
@@ -1336,5 +1362,445 @@ function escapeHTML(str) {
   );
 }
 
+// ── Focus Mode & Deep Work Engine ──────────────────────────
+const FOCUS_STORAGE_KEY = 'tesseract_focus_sessions';
+
+const FocusEngine = {
+  activeTaskId: null,
+  durationMinutes: 25,
+  remainingSeconds: 25 * 60,
+  totalSeconds: 25 * 60,
+  timerInterval: null,
+  isRunning: false,
+  audioContext: null,
+  soundNodes: null,
+  currentSound: 'rain',
+  volume: 0.5,
+
+  init() {
+    // Preset buttons
+    document.querySelectorAll('.focus-preset-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (this.isRunning) this.pause();
+        const mins = parseInt(chip.getAttribute('data-minutes'), 10);
+        this.setDuration(mins);
+      });
+    });
+
+    // Control buttons
+    const btnToggle = document.getElementById('focus-btn-toggle');
+    if (btnToggle) btnToggle.addEventListener('click', () => this.toggle());
+
+    const btnReset = document.getElementById('focus-btn-reset');
+    if (btnReset) btnReset.addEventListener('click', () => this.reset());
+
+    const btnPlus5 = document.getElementById('focus-btn-plus5');
+    if (btnPlus5) btnPlus5.addEventListener('click', () => this.addFiveMinutes());
+
+    const btnExit = document.getElementById('focus-exit-btn');
+    if (btnExit) btnExit.addEventListener('click', () => this.close());
+
+    const btnHeaderFocus = document.getElementById('btn-header-focus');
+    if (btnHeaderFocus) {
+      btnHeaderFocus.addEventListener('click', () => {
+        const incomplete = state.tasks.filter(t => !t.completed);
+        const top = incomplete.find(t => t.tier === 'daily' && t.priority === 'urgent')
+          || incomplete.find(t => t.tier === 'daily')
+          || incomplete[0];
+        this.open(top ? top.id : null);
+      });
+    }
+
+    const btnComplete = document.getElementById('focus-btn-complete-task');
+    if (btnComplete) btnComplete.addEventListener('click', () => this.markTaskComplete());
+
+    // Soundscape controls
+    const soundSelect = document.getElementById('focus-sound-select');
+    if (soundSelect) {
+      soundSelect.addEventListener('change', (e) => {
+        this.currentSound = e.target.value;
+        const label = document.getElementById('focus-sound-label');
+        if (label) {
+          const names = { rain: 'Rain', waves: 'Waves', binaural: 'Binaural', mute: 'Mute' };
+          label.textContent = names[this.currentSound] || 'Sound';
+        }
+        if (this.isRunning) {
+          this.stopAudio();
+          this.playAudio(this.currentSound);
+        }
+      });
+    }
+
+    const volSlider = document.getElementById('focus-volume-slider');
+    if (volSlider) {
+      volSlider.addEventListener('input', (e) => {
+        this.volume = parseFloat(e.target.value);
+        if (this.soundNodes && this.soundNodes.masterGain && this.audioContext) {
+          this.soundNodes.masterGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+        }
+      });
+    }
+
+    // Global keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('focus-mode-overlay');
+      if (overlay && overlay.style.display !== 'none') {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          this.close();
+        } else if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          this.toggle();
+        } else if ((e.key === 'r' || e.key === 'R') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          this.reset();
+        }
+      }
+    });
+  },
+
+  open(taskId = null) {
+    this.activeTaskId = taskId;
+    const overlay = document.getElementById('focus-mode-overlay');
+    if (!overlay) return;
+
+    const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
+    const taskTierEl = document.getElementById('focus-task-tier');
+    const taskTitleEl = document.getElementById('focus-task-title');
+    const taskDescEl = document.getElementById('focus-task-desc');
+    const completeBtn = document.getElementById('focus-btn-complete-task');
+
+    if (task) {
+      const tierObj = TIERS.find(t => t.id === task.tier) || { emoji: '📌', name: 'Task' };
+      if (taskTierEl) taskTierEl.textContent = `${tierObj.emoji} ${tierObj.name.toUpperCase()}`;
+      if (taskTitleEl) taskTitleEl.textContent = task.title;
+      if (taskDescEl) taskDescEl.textContent = task.description || 'Focus on high-leverage execution. No distractions.';
+      if (completeBtn) {
+        completeBtn.style.display = 'inline-flex';
+        const label = completeBtn.querySelector('#focus-complete-btn-text');
+        if (label) label.textContent = task.completed ? 'Goal Completed ✅' : 'Mark Goal Complete';
+      }
+    } else {
+      if (taskTierEl) taskTierEl.textContent = '⚡ DEEP WORK SPRINT';
+      if (taskTitleEl) taskTitleEl.textContent = 'Uninterrupted Flow Session';
+      if (taskDescEl) taskDescEl.textContent = 'Single-task focus mode. Eliminate all context switching.';
+      if (completeBtn) completeBtn.style.display = 'none';
+    }
+
+    this.reset();
+    overlay.style.display = 'flex';
+    lucide.createIcons();
+  },
+
+  close() {
+    this.pause();
+    this.stopAudio();
+    const overlay = document.getElementById('focus-mode-overlay');
+    if (overlay) overlay.style.display = 'none';
+    document.title = 'Tesseract | Multi-Horizon Goal & Task Matrix';
+  },
+
+  setDuration(minutes) {
+    this.durationMinutes = minutes;
+    this.totalSeconds = minutes * 60;
+    this.remainingSeconds = this.totalSeconds;
+    this.updateDisplay();
+    this.updateRing();
+
+    document.querySelectorAll('.focus-preset-chip').forEach(c => {
+      c.classList.toggle('active', parseInt(c.getAttribute('data-minutes'), 10) === minutes);
+    });
+  },
+
+  toggle() {
+    if (this.isRunning) {
+      this.pause();
+    } else {
+      this.start();
+    }
+  },
+
+  start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
+
+    const statusEl = document.getElementById('focus-time-status');
+    if (statusEl) statusEl.textContent = 'IN FLOW';
+
+    const toggleText = document.getElementById('focus-toggle-text');
+    if (toggleText) toggleText.textContent = 'Pause';
+
+    const playIcon = document.getElementById('focus-play-icon');
+    if (playIcon) {
+      playIcon.setAttribute('data-lucide', 'pause');
+      lucide.createIcons();
+    }
+
+    this.playAudio(this.currentSound);
+
+    this.timerInterval = setInterval(() => {
+      this.remainingSeconds--;
+      this.updateDisplay();
+      this.updateRing();
+
+      if (this.remainingSeconds <= 0) {
+        this.onComplete();
+      }
+    }, 1000);
+  },
+
+  pause() {
+    this.isRunning = false;
+    clearInterval(this.timerInterval);
+    this.timerInterval = null;
+
+    const statusEl = document.getElementById('focus-time-status');
+    if (statusEl) statusEl.textContent = 'PAUSED';
+
+    const toggleText = document.getElementById('focus-toggle-text');
+    if (toggleText) toggleText.textContent = 'Resume';
+
+    const playIcon = document.getElementById('focus-play-icon');
+    if (playIcon) {
+      playIcon.setAttribute('data-lucide', 'play');
+      lucide.createIcons();
+    }
+
+    this.stopAudio();
+  },
+
+  reset() {
+    this.pause();
+    this.remainingSeconds = this.totalSeconds;
+    this.updateDisplay();
+    this.updateRing();
+
+    const statusEl = document.getElementById('focus-time-status');
+    if (statusEl) statusEl.textContent = 'READY';
+
+    const toggleText = document.getElementById('focus-toggle-text');
+    if (toggleText) toggleText.textContent = 'Start Focus';
+  },
+
+  addFiveMinutes() {
+    this.totalSeconds += 300;
+    this.remainingSeconds += 300;
+    this.updateDisplay();
+    this.updateRing();
+  },
+
+  updateDisplay() {
+    const mins = Math.floor(this.remainingSeconds / 60);
+    const secs = this.remainingSeconds % 60;
+    const str = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
+    const digitsEl = document.getElementById('focus-time-digits');
+    if (digitsEl) digitsEl.textContent = str;
+
+    if (this.isRunning) {
+      document.title = `(${str}) Deep Work | Tesseract`;
+    } else {
+      document.title = 'Tesseract | Multi-Horizon Goal & Task Matrix';
+    }
+  },
+
+  updateRing() {
+    const ring = document.getElementById('focus-ring-progress');
+    if (!ring) return;
+    const circumference = 722.56; // 2 * pi * 115
+    const progress = Math.max(0, this.remainingSeconds / this.totalSeconds);
+    const offset = circumference * (1 - progress);
+    ring.style.strokeDashoffset = offset;
+  },
+
+  onComplete() {
+    this.pause();
+    this.playChime();
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+    }
+
+    const sessions = this.getSessions();
+    const task = this.activeTaskId ? state.tasks.find(t => t.id === this.activeTaskId) : null;
+    const newSession = {
+      id: `fs_${Date.now()}`,
+      taskId: this.activeTaskId,
+      taskTitle: task ? task.title : 'General Deep Work Sprint',
+      durationMinutes: Math.round(this.totalSeconds / 60),
+      timestamp: new Date().toISOString()
+    };
+    sessions.push(newSession);
+    localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(sessions));
+
+    showToast('🎉 Focus session completed! Outstanding deep work.', 'success');
+    this.reset();
+    renderAll();
+  },
+
+  markTaskComplete() {
+    if (!this.activeTaskId) return;
+    toggleTaskCompletion(this.activeTaskId);
+    const completeBtn = document.getElementById('focus-btn-complete-task');
+    if (completeBtn) {
+      const label = completeBtn.querySelector('#focus-complete-btn-text');
+      if (label) label.textContent = 'Goal Completed! 🎉';
+    }
+    showToast('Task marked complete!', 'success');
+  },
+
+  getSessions() {
+    try {
+      return JSON.parse(localStorage.getItem(FOCUS_STORAGE_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  },
+
+  getTotalHours() {
+    const sessions = this.getSessions();
+    const totalMins = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+    return (totalMins / 60).toFixed(1);
+  },
+
+  // ── Web Audio API Synthesizer (100% Offline Ambient Soundscapes) ────
+  ensureAudioContext() {
+    if (!this.audioContext) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) this.audioContext = new AudioContextClass();
+    }
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+  },
+
+  playAudio(type) {
+    if (type === 'mute') return;
+    this.ensureAudioContext();
+    if (!this.audioContext) return;
+
+    this.stopAudio();
+
+    const ctx = this.audioContext;
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(this.volume, ctx.currentTime);
+    masterGain.connect(ctx.destination);
+
+    if (type === 'rain') {
+      const bufferSize = ctx.sampleRate * 2;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.05;
+        b6 = white * 0.115926;
+      }
+
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+      whiteNoise.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(600, ctx.currentTime);
+
+      whiteNoise.connect(filter);
+      filter.connect(masterGain);
+      whiteNoise.start();
+
+      this.soundNodes = { masterGain, source: whiteNoise };
+    } else if (type === 'waves') {
+      const bufferSize = ctx.sampleRate * 2;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * 0.08;
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+      noise.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(450, ctx.currentTime);
+
+      const swellGain = ctx.createGain();
+      swellGain.gain.setValueAtTime(0.2, ctx.currentTime);
+
+      const lfo = ctx.createOscillator();
+      lfo.frequency.setValueAtTime(0.12, ctx.currentTime);
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.setValueAtTime(0.25, ctx.currentTime);
+      lfo.connect(lfoGain);
+      lfoGain.connect(swellGain.gain);
+
+      noise.connect(filter);
+      filter.connect(swellGain);
+      swellGain.connect(masterGain);
+
+      noise.start();
+      lfo.start();
+
+      this.soundNodes = { masterGain, source: noise, lfo };
+    } else if (type === 'binaural') {
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      osc1.frequency.setValueAtTime(196, ctx.currentTime);
+      osc2.frequency.setValueAtTime(206, ctx.currentTime);
+
+      const toneGain = ctx.createGain();
+      toneGain.gain.setValueAtTime(0.12, ctx.currentTime);
+
+      osc1.connect(toneGain);
+      osc2.connect(toneGain);
+      toneGain.connect(masterGain);
+
+      osc1.start();
+      osc2.start();
+
+      this.soundNodes = { masterGain, osc1, osc2 };
+    }
+  },
+
+  stopAudio() {
+    if (this.soundNodes) {
+      try {
+        if (this.soundNodes.source) this.soundNodes.source.stop();
+        if (this.soundNodes.lfo) this.soundNodes.lfo.stop();
+        if (this.soundNodes.osc1) this.soundNodes.osc1.stop();
+        if (this.soundNodes.osc2) this.soundNodes.osc2.stop();
+      } catch (e) {}
+      this.soundNodes = null;
+    }
+  },
+
+  playChime() {
+    this.ensureAudioContext();
+    if (!this.audioContext) return;
+    const ctx = this.audioContext;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.2);
+  }
+};
+
 // Start application on DOM load
 document.addEventListener('DOMContentLoaded', init);
+

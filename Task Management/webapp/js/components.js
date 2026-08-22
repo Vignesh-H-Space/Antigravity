@@ -153,6 +153,10 @@ const Components = {
           <button class="clear-search" id="clear-search" style="display:none;">&times;</button>
         </div>
         ` : ''}
+        <button class="btn btn-secondary" id="btn-header-focus" title="Open Deep Work Focus Mode">
+          <i data-lucide="zap"></i>
+          <span>Deep Work</span>
+        </button>
         <button class="btn btn-primary" id="btn-open-add-modal">
           <i data-lucide="plus"></i>
           <span>Add Goal / Task</span>
@@ -172,7 +176,7 @@ const Components = {
   },
 
   /**
-   * Render Task Modal and Toast Container at the bottom of the body
+   * Render Task Modal, Focus Overlay, and Toast Container at the bottom of the body
    */
   renderModalAndToasts() {
     const extraHTML = `
@@ -257,6 +261,87 @@ const Components = {
             <button type="submit" class="btn btn-primary" id="modal-save-btn">Save Goal</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Fullscreen Focus Mode Overlay -->
+    <div class="focus-overlay" id="focus-mode-overlay" style="display: none;">
+      <div class="focus-container">
+        <!-- Top Toolbar -->
+        <div class="focus-top-bar">
+          <div class="focus-brand-pill">
+            <i data-lucide="zap"></i>
+            <span>DEEP WORK MODE</span>
+          </div>
+          <div class="focus-top-actions">
+            <!-- Audio Soundscape selector -->
+            <div class="focus-sound-control">
+              <button class="focus-sound-btn" id="focus-sound-toggle" title="Toggle Soundscape">
+                <i data-lucide="volume-2" id="focus-sound-icon"></i>
+                <span id="focus-sound-label">Rain</span>
+              </button>
+              <select id="focus-sound-select" class="focus-sound-select">
+                <option value="rain">🌧️ Rain</option>
+                <option value="waves">🌊 Waves</option>
+                <option value="binaural">🧠 Binaural Focus</option>
+                <option value="mute">🔕 Mute / Silent</option>
+              </select>
+              <input type="range" id="focus-volume-slider" min="0" max="1" step="0.05" value="0.5" class="focus-volume-slider" title="Volume">
+            </div>
+            <button class="focus-close-btn" id="focus-exit-btn" title="Exit Focus Mode (Esc)">&times;</button>
+          </div>
+        </div>
+
+        <!-- Active Task Spotlight -->
+        <div class="focus-task-card" id="focus-task-card">
+          <div class="focus-task-tier" id="focus-task-tier">🌅 Daily Task</div>
+          <h1 class="focus-task-title" id="focus-task-title">Select a Goal to Execute</h1>
+          <p class="focus-task-desc" id="focus-task-desc">Single-task execution. Zero distractions.</p>
+        </div>
+
+        <!-- Circular Timer Ring -->
+        <div class="focus-timer-wrapper">
+          <svg class="focus-timer-svg" viewBox="0 0 260 260">
+            <circle class="focus-ring-bg" cx="130" cy="130" r="115"></circle>
+            <circle class="focus-ring-progress" id="focus-ring-progress" cx="130" cy="130" r="115"></circle>
+          </svg>
+          <div class="focus-time-display">
+            <span class="focus-time-digits" id="focus-time-digits">25:00</span>
+            <span class="focus-time-status" id="focus-time-status">READY</span>
+          </div>
+        </div>
+
+        <!-- Timer Presets -->
+        <div class="focus-presets">
+          <button class="focus-preset-chip active" data-minutes="25">25m Sprint</button>
+          <button class="focus-preset-chip" data-minutes="50">50m Deep Block</button>
+          <button class="focus-preset-chip" data-minutes="90">90m Flow State</button>
+          <button class="focus-preset-chip" data-minutes="5">5m Break</button>
+        </div>
+
+        <!-- Control Actions -->
+        <div class="focus-controls">
+          <button class="btn btn-secondary btn-lg" id="focus-btn-reset" title="Reset (R)">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Reset</span>
+          </button>
+          <button class="btn btn-primary btn-lg focus-main-action" id="focus-btn-toggle" title="Space to Start/Pause">
+            <i data-lucide="play" id="focus-play-icon"></i>
+            <span id="focus-toggle-text">Start Focus</span>
+          </button>
+          <button class="btn btn-ghost btn-lg" id="focus-btn-plus5" title="Add 5 Minutes">
+            <span>+5m</span>
+          </button>
+        </div>
+
+        <!-- Bottom Action: Mark Task Done -->
+        <div class="focus-bottom-action">
+          <button class="btn btn-secondary" id="focus-btn-complete-task">
+            <i data-lucide="check-circle-2"></i>
+            <span id="focus-complete-btn-text">Mark Goal Complete</span>
+          </button>
+          <span class="focus-shortcut-hint">Shortcuts: <b>Space</b> (play/pause) • <b>R</b> (reset) • <b>Esc</b> (exit)</span>
+        </div>
       </div>
     </div>
 
