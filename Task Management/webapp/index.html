@@ -25,16 +25,62 @@
       <!-- Header Mount Point -->
       <div id="header-mount"></div>
 
-      <!-- Horizon Progress Summary Cards -->
+      <!-- Executive Command Hub Hero (Landing Page) -->
+      <section class="command-hero" id="command-hero">
+        <div class="command-hero-content">
+          <div class="command-greeting-row">
+            <div>
+              <div class="command-date-pill" id="command-date-pill">
+                <i data-lucide="calendar"></i>
+                <span id="live-date-text">Today</span>
+              </div>
+              <h2 class="command-greeting-title" id="home-greeting-title">Welcome back 👋</h2>
+              <p class="command-greeting-desc" id="home-greeting-desc">Your multi-horizon flight plan for today. Lock in and execute.</p>
+            </div>
+            
+            <div class="command-quick-metrics">
+              <div class="quick-metric-item">
+                <span class="quick-metric-val" id="metric-daily-ratio">0/0</span>
+                <span class="quick-metric-lbl">Daily Goals</span>
+              </div>
+              <div class="quick-metric-divider"></div>
+              <div class="quick-metric-item accent">
+                <span class="quick-metric-val" id="metric-streak-count">0 🔥</span>
+                <span class="quick-metric-lbl">Day Streak</span>
+              </div>
+              <div class="quick-metric-divider"></div>
+              <div class="quick-metric-item">
+                <span class="quick-metric-val" id="metric-urgent-count">0</span>
+                <span class="quick-metric-lbl">Urgent Open</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spotlight Target Priority Card -->
+          <div class="command-spotlight-card" id="command-spotlight-card">
+            <div class="spotlight-badge"><i data-lucide="zap"></i> CURRENT FOCUS TARGET</div>
+            <div class="spotlight-inner" id="spotlight-inner">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Horizon Launchpad Cards -->
       <section class="progress-summary-grid" id="progress-summary-container">
         <!-- Daily -->
         <div class="horizon-card" data-horizon="daily">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-daily">🌅 Daily</div>
-            <span class="horizon-ratio" id="stat-ratio-daily">0/0</span>
+            <button class="card-add-btn" title="Add Daily Task" onclick="event.stopPropagation(); openAddModal('daily');">
+              <i data-lucide="plus"></i>
+            </button>
           </div>
           <div class="horizon-card-body">
-            <div class="horizon-pct" id="stat-pct-daily">0%</div>
+            <div class="horizon-card-stats">
+              <div class="horizon-pct" id="stat-pct-daily">0%</div>
+              <span class="horizon-ratio" id="stat-ratio-daily">0/0</span>
+            </div>
             <div class="progress-track">
               <div class="progress-bar-fill fill-daily" id="stat-bar-daily" style="width: 0%"></div>
             </div>
@@ -45,10 +91,15 @@
         <div class="horizon-card" data-horizon="weekly">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-weekly">📅 Weekly</div>
-            <span class="horizon-ratio" id="stat-ratio-weekly">0/0</span>
+            <button class="card-add-btn" title="Add Weekly Milestone" onclick="event.stopPropagation(); openAddModal('weekly');">
+              <i data-lucide="plus"></i>
+            </button>
           </div>
           <div class="horizon-card-body">
-            <div class="horizon-pct" id="stat-pct-weekly">0%</div>
+            <div class="horizon-card-stats">
+              <div class="horizon-pct" id="stat-pct-weekly">0%</div>
+              <span class="horizon-ratio" id="stat-ratio-weekly">0/0</span>
+            </div>
             <div class="progress-track">
               <div class="progress-bar-fill fill-weekly" id="stat-bar-weekly" style="width: 0%"></div>
             </div>
@@ -59,10 +110,15 @@
         <div class="horizon-card" data-horizon="monthly">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-monthly">🗓️ Monthly</div>
-            <span class="horizon-ratio" id="stat-ratio-monthly">0/0</span>
+            <button class="card-add-btn" title="Add Monthly Goal" onclick="event.stopPropagation(); openAddModal('monthly');">
+              <i data-lucide="plus"></i>
+            </button>
           </div>
           <div class="horizon-card-body">
-            <div class="horizon-pct" id="stat-pct-monthly">0%</div>
+            <div class="horizon-card-stats">
+              <div class="horizon-pct" id="stat-pct-monthly">0%</div>
+              <span class="horizon-ratio" id="stat-ratio-monthly">0/0</span>
+            </div>
             <div class="progress-track">
               <div class="progress-bar-fill fill-monthly" id="stat-bar-monthly" style="width: 0%"></div>
             </div>
@@ -73,10 +129,15 @@
         <div class="horizon-card" data-horizon="quarterly" style="display:none;">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-quarterly">🎯 Quarterly</div>
-            <span class="horizon-ratio" id="stat-ratio-quarterly">0/0</span>
+            <button class="card-add-btn" title="Add Quarterly Goal" onclick="event.stopPropagation(); openAddModal('quarterly');">
+              <i data-lucide="plus"></i>
+            </button>
           </div>
           <div class="horizon-card-body">
-            <div class="horizon-pct" id="stat-pct-quarterly">0%</div>
+            <div class="horizon-card-stats">
+              <div class="horizon-pct" id="stat-pct-quarterly">0%</div>
+              <span class="horizon-ratio" id="stat-ratio-quarterly">0/0</span>
+            </div>
             <div class="progress-track">
               <div class="progress-bar-fill fill-quarterly" id="stat-bar-quarterly" style="width: 0%"></div>
             </div>
@@ -87,10 +148,15 @@
         <div class="horizon-card" data-horizon="annual" style="display:none;">
           <div class="horizon-card-top">
             <div class="horizon-badge tier-annual">🏆 Annual</div>
-            <span class="horizon-ratio" id="stat-ratio-annual">0/0</span>
+            <button class="card-add-btn" title="Add Annual Vision" onclick="event.stopPropagation(); openAddModal('annual');">
+              <i data-lucide="plus"></i>
+            </button>
           </div>
           <div class="horizon-card-body">
-            <div class="horizon-pct" id="stat-pct-annual">0%</div>
+            <div class="horizon-card-stats">
+              <div class="horizon-pct" id="stat-pct-annual">0%</div>
+              <span class="horizon-ratio" id="stat-ratio-annual">0/0</span>
+            </div>
             <div class="progress-track">
               <div class="progress-bar-fill fill-annual" id="stat-bar-annual" style="width: 0%"></div>
             </div>
@@ -158,6 +224,15 @@
       <section class="task-list-view" id="tasks-container">
         <!-- Injected via JavaScript -->
       </section>
+
+      <!-- Daily Mindset / Affirmation Ribbon -->
+      <div class="mindset-ribbon" id="mindset-ribbon">
+        <div class="mindset-icon">💡</div>
+        <div class="mindset-content">
+          <span class="mindset-label">DAILY PRODUCTIVITY PRINCIPLE</span>
+          <p class="mindset-quote" id="mindset-quote">"Focus on high-leverage execution. Consistent daily action compounds into extraordinary outcomes."</p>
+        </div>
+      </div>
     </main>
   </div>
 

@@ -68,7 +68,7 @@ function init() {
   if (typeof Components !== 'undefined') {
     Components.renderSidebar(state.activeHorizon);
     
-    let headerConfig = { title: 'All Goals & Tasks', subtitle: 'Holistic overview across all 5 strategic horizons.', showSearch: true };
+    let headerConfig = { title: 'Executive Command Center', subtitle: 'Unified multi-horizon cockpit & execution launchpad.', showSearch: true };
     if (page === 'cascade') {
       headerConfig = { title: 'Strategic Goal Cascade', subtitle: 'Multi-horizon vertical alignment linking daily actions to annual vision.', showSearch: false };
     } else if (page === 'analytics') {
@@ -492,6 +492,17 @@ function updateHeaderAvatar() {
   }
 }
 
+// Quotes list for daily inspiration on Home
+const PRODUCTIVITY_QUOTES = [
+  "Focus on high-leverage execution. Consistent daily action compounds into extraordinary outcomes.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "You do not rise to the level of your goals. You fall to the level of your systems.",
+  "Energy flows where attention goes. Eliminate distractions and conquer the day.",
+  "Action cures fear. Take the next highest-leverage step right now.",
+  "Small daily improvements over time lead to stunning results.",
+  "Strategy is about making choices, trade-offs; it's about deliberately choosing to be different."
+];
+
 // Main Render Function
 function renderAll() {
   const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
@@ -501,6 +512,7 @@ function renderAll() {
   renderStreakUI();
 
   if (page === 'index') {
+    renderHomeCommandHero();
     syncHorizonUI();
     updateHeaderTitle();
     updateProgressCards();
@@ -515,6 +527,99 @@ function renderAll() {
   }
 
   lucide.createIcons();
+}
+
+// Render Executive Command Hero on Home
+function renderHomeCommandHero() {
+  const hero = document.getElementById('command-hero');
+  if (!hero) return;
+
+  // If filtered to a single sub-horizon (like quarterly or annual only), hide hero to keep focus
+  if (state.activeHorizon !== 'general' && state.activeHorizon !== 'all') {
+    hero.style.display = 'none';
+    const ribbon = document.getElementById('mindset-ribbon');
+    if (ribbon) ribbon.style.display = 'none';
+    return;
+  }
+  hero.style.display = 'block';
+  const ribbon = document.getElementById('mindset-ribbon');
+  if (ribbon) ribbon.style.display = 'flex';
+
+  // Live Date
+  const dateEl = document.getElementById('live-date-text');
+  if (dateEl) {
+    const now = new Date();
+    dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+
+  // Greeting
+  const userName = (state.profile && state.profile.name) ? state.profile.name : 'Achiever';
+  const greetingTitle = document.getElementById('home-greeting-title');
+  if (greetingTitle) {
+    const hour = new Date().getHours();
+    const timeOfDay = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    greetingTitle.textContent = `${timeOfDay}, ${userName} 👋`;
+  }
+
+  // Quick Metrics
+  const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
+  const dailyCompleted = dailyTasks.filter(t => t.completed).length;
+  const urgentCount = state.tasks.filter(t => t.priority === 'urgent' && !t.completed).length;
+  const streakCount = state.streak ? state.streak.count : 0;
+
+  const metricDaily = document.getElementById('metric-daily-ratio');
+  const metricStreak = document.getElementById('metric-streak-count');
+  const metricUrgent = document.getElementById('metric-urgent-count');
+
+  if (metricDaily) metricDaily.textContent = `${dailyCompleted}/${dailyTasks.length}`;
+  if (metricStreak) metricStreak.textContent = `${streakCount} 🔥`;
+  if (metricUrgent) metricUrgent.textContent = urgentCount;
+
+  // Spotlight Priority Task
+  const spotlightInner = document.getElementById('spotlight-inner');
+  if (spotlightInner) {
+    const incompleteTasks = state.tasks.filter(t => !t.completed);
+    let topTask = incompleteTasks.find(t => t.tier === 'daily' && t.priority === 'urgent')
+      || incompleteTasks.find(t => t.tier === 'daily' && t.priority === 'high')
+      || incompleteTasks.find(t => t.tier === 'daily')
+      || incompleteTasks.find(t => t.priority === 'urgent')
+      || incompleteTasks.find(t => t.priority === 'high')
+      || incompleteTasks[0];
+
+    if (topTask) {
+      const tierObj = TIERS.find(t => t.id === topTask.tier) || { emoji: '📌', name: 'Task' };
+      spotlightInner.innerHTML = `
+        <div class="spotlight-task-title">
+          <span>${tierObj.emoji}</span>
+          <span>${escapeHTML(topTask.title)}</span>
+        </div>
+        <div class="spotlight-task-meta">
+          <span class="meta-pill prio-pill prio-${topTask.priority}">${topTask.priority}</span>
+          <span class="meta-pill category-pill">#${escapeHTML(topTask.category || 'General')}</span>
+          <button class="spotlight-action-btn" onclick="toggleTaskCompletion('${topTask.id}')">
+            <i data-lucide="check"></i> <span>Complete</span>
+          </button>
+        </div>
+      `;
+    } else {
+      spotlightInner.innerHTML = `
+        <div class="spotlight-task-title" style="color:#10b981;">
+          <span>🎉</span>
+          <span>All high-priority goals crushed for now! Take a breath or set a new milestone.</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal('daily')">
+          <i data-lucide="plus"></i> <span>Add New Goal</span>
+        </button>
+      `;
+    }
+  }
+
+  // Rotate mindset quote based on day of year
+  const quoteEl = document.getElementById('mindset-quote');
+  if (quoteEl) {
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+    quoteEl.textContent = `"${PRODUCTIVITY_QUOTES[dayOfYear % PRODUCTIVITY_QUOTES.length]}"`;
+  }
 }
 
 // Keep sidebar tabs and filter dropdown in sync
@@ -539,8 +644,8 @@ function updateHeaderTitle() {
   if (!heading || !desc) return;
 
   if (state.activeHorizon === 'general') {
-    heading.textContent = 'Home';
-    desc.textContent = 'Your daily, weekly, and monthly goals at a glance.';
+    heading.textContent = 'Executive Command Center';
+    desc.textContent = 'Unified multi-horizon cockpit & execution launchpad.';
   } else if (state.activeHorizon === 'all') {
     heading.textContent = '🌐 All 5 Strategic Horizons';
     desc.textContent = 'Holistic overview across all 5 strategic time horizons (Daily to Annual).';
