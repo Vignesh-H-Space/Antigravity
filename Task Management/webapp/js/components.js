@@ -78,6 +78,10 @@ const Components = {
 
       <div class="sidebar-section-title">VIEWS & TOOLS</div>
       <nav class="nav-menu secondary">
+        <button class="nav-item" id="btn-sidebar-focus" onclick="FocusEngine.open();" title="Start Focus Mode Session">
+          <i data-lucide="zap"></i>
+          <span>Focus Mode</span>
+        </button>
         <button class="nav-item ${isCascade ? 'active' : ''}" id="btn-view-cascade" onclick="if(Components.getCurrentPage()!=='cascade') window.location.href='cascade.html';">
           <i data-lucide="git-merge"></i>
           <span>Goal Cascade Tree</span>
@@ -153,9 +157,9 @@ const Components = {
           <button class="clear-search" id="clear-search" style="display:none;">&times;</button>
         </div>
         ` : ''}
-        <button class="btn btn-secondary" id="btn-header-focus" title="Open Deep Work Focus Mode">
+        <button class="btn btn-secondary" id="btn-header-focus" title="Open Focus Mode">
           <i data-lucide="zap"></i>
-          <span>Deep Work</span>
+          <span>Focus Mode</span>
         </button>
         <button class="btn btn-primary" id="btn-open-add-modal">
           <i data-lucide="plus"></i>
@@ -271,7 +275,7 @@ const Components = {
         <div class="focus-top-bar">
           <div class="focus-brand-pill">
             <i data-lucide="zap"></i>
-            <span>DEEP WORK MODE</span>
+            <span>FOCUS MODE</span>
           </div>
           <div class="focus-top-actions">
             <!-- Audio Soundscape selector -->
