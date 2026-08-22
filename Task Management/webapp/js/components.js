@@ -61,7 +61,7 @@ const Components = {
         </button>
         <button class="nav-item ${isHome && activeHorizon === 'quarterly' ? 'active' : ''}" data-horizon="quarterly" id="tab-quarterly">
           <span class="nav-emoji">🎯</span>
-          <span>Quarterly OKRs</span>
+          <span>Quarterly Goals</span>
           <span class="badge" id="badge-quarterly">0</span>
         </button>
         <button class="nav-item ${isHome && activeHorizon === 'annual' ? 'active' : ''}" data-horizon="annual" id="tab-annual">
@@ -193,7 +193,7 @@ const Components = {
               <option value="daily">🌅 Daily Task (Today's To-Do)</option>
               <option value="weekly">📅 Weekly Milestone (This Week)</option>
               <option value="monthly">🗓️ Monthly Goal (This Month)</option>
-              <option value="quarterly">🎯 Quarterly OKR (90-Day Objective)</option>
+              <option value="quarterly">🎯 Quarterly Goal (90-Day Objective)</option>
               <option value="annual">🏆 Annual Vision (Yearly Goal)</option>
             </select>
           </div>
