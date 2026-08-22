@@ -423,6 +423,27 @@ function bindEvents() {
   // Form Submit
   const taskForm = document.getElementById('task-form');
   if (taskForm) taskForm.addEventListener('submit', handleFormSubmit);
+
+  // Modal Sub-tasks Add Button & Enter key
+  const btnAddSubtask = document.getElementById('btn-add-modal-subtask');
+  const modalSubtaskInput = document.getElementById('modal-subtask-input');
+  if (btnAddSubtask && modalSubtaskInput) {
+    const handleAdd = () => {
+      const val = modalSubtaskInput.value.trim();
+      if (val) {
+        addModalSubtaskRow(val, false);
+        modalSubtaskInput.value = '';
+        modalSubtaskInput.focus();
+      }
+    };
+    btnAddSubtask.addEventListener('click', handleAdd);
+    modalSubtaskInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAdd();
+      }
+    });
+  }
 }
 
 // Toggle Task Completion
@@ -805,6 +826,46 @@ function createTaskCardElement(task) {
   const parentTask = task.parentId ? state.tasks.find(p => p.id === task.parentId) : null;
   const parentBadge = parentTask ? `<span class="meta-pill cascade-pill" title="Cascades up to: ${parentTask.title}"><i data-lucide="arrow-up-right"></i> ${parentTask.title.substring(0, 24)}...</span>` : '';
 
+  const subtasks = task.subtasks || [];
+  const totalSubtasks = subtasks.length;
+  const doneSubtasks = subtasks.filter(s => s.completed).length;
+  const subtasksPct = totalSubtasks > 0 ? Math.round((doneSubtasks / totalSubtasks) * 100) : 0;
+
+  let subtasksHTML = '';
+  if (totalSubtasks > 0) {
+    subtasksHTML = `
+      <div class="task-subtasks-section">
+        <div class="subtasks-header">
+          <span>Milestones (${doneSubtasks}/${totalSubtasks})</span>
+          <span>${subtasksPct}%</span>
+        </div>
+        <div class="subtasks-progress-mini">
+          <div class="subtasks-progress-fill" style="width: ${subtasksPct}%;"></div>
+        </div>
+        <div class="subtask-list">
+          ${subtasks.map(st => `
+            <div class="subtask-item ${st.completed ? 'completed' : ''}" data-subtask-id="${st.id}">
+              <input type="checkbox" class="subtask-checkbox" ${st.completed ? 'checked' : ''} data-task-id="${task.id}" data-subtask-id="${st.id}" aria-label="Toggle subtask">
+              <span class="subtask-title">${escapeHTML(st.title)}</span>
+              <button type="button" class="subtask-delete-btn" title="Delete step" data-task-id="${task.id}" data-subtask-id="${st.id}">&times;</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="subtask-inline-add-row">
+          <input type="text" class="subtask-inline-input" placeholder="+ Add step and press Enter..." data-task-id="${task.id}">
+        </div>
+      </div>
+    `;
+  } else {
+    subtasksHTML = `
+      <div class="task-subtasks-section" style="border-top:none; padding-top:2px; margin-top:4px;">
+        <div class="subtask-inline-add-row" style="margin-top:0;">
+          <input type="text" class="subtask-inline-input" placeholder="+ Add milestone checklist step..." data-task-id="${task.id}">
+        </div>
+      </div>
+    `;
+  }
+
   card.innerHTML = `
     <div class="checkbox-wrapper">
       <input type="checkbox" class="custom-checkbox" id="chk-${task.id}" ${task.completed ? 'checked' : ''} aria-label="Mark ${task.title} complete" />
@@ -814,7 +875,7 @@ function createTaskCardElement(task) {
       <div class="task-header-row">
         <div class="task-title">${escapeHTML(task.title)}</div>
         <div class="task-actions">
-          <button class="action-btn focus-btn" title="Focus (Deep Work)" data-id="${task.id}"><i data-lucide="zap"></i></button>
+          <button class="action-btn focus-btn" title="Focus Mode" data-id="${task.id}"><i data-lucide="zap"></i></button>
           <button class="action-btn edit-btn" title="Edit Task" data-id="${task.id}"><i data-lucide="edit-2"></i></button>
           <button class="action-btn delete-btn" title="Delete Task" data-id="${task.id}"><i data-lucide="trash-2"></i></button>
         </div>
@@ -829,6 +890,8 @@ function createTaskCardElement(task) {
         ${parentBadge}
         ${(task.tags || []).map(tg => `<span class="tag-pill">#${escapeHTML(tg)}</span>`).join(' ')}
       </div>
+
+      ${subtasksHTML}
     </div>
   `;
 
@@ -840,6 +903,38 @@ function createTaskCardElement(task) {
   card.querySelector('.focus-btn').addEventListener('click', () => FocusEngine.open(task.id));
   card.querySelector('.edit-btn').addEventListener('click', () => openEditModal(task.id));
   card.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
+
+  // Subtask Checkboxes
+  card.querySelectorAll('.subtask-checkbox').forEach(stChk => {
+    stChk.addEventListener('change', (e) => {
+      e.stopPropagation();
+      const sId = stChk.getAttribute('data-subtask-id');
+      toggleSubtask(task.id, sId);
+    });
+  });
+
+  // Subtask Delete buttons
+  card.querySelectorAll('.subtask-delete-btn').forEach(delBtn => {
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sId = delBtn.getAttribute('data-subtask-id');
+      deleteSubtaskInline(task.id, sId);
+    });
+  });
+
+  // Subtask Inline Input
+  const inlineInput = card.querySelector('.subtask-inline-input');
+  if (inlineInput) {
+    inlineInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = inlineInput.value.trim();
+        if (val) {
+          addSubtaskInline(task.id, val);
+        }
+      }
+    });
+  }
 
   return card;
 }
@@ -970,6 +1065,7 @@ function renderAnalyticsView() {
 }
 
 // Modal Form handling
+// Modal Form handling
 function openAddModal(defaultTier = null) {
   const taskModal = document.getElementById('task-modal');
   const taskForm = document.getElementById('task-form');
@@ -982,6 +1078,9 @@ function openAddModal(defaultTier = null) {
   document.getElementById('task-id-input').value = '';
   if (defaultTier) document.getElementById('form-tier').value = defaultTier;
   else if (state.activeHorizon !== 'all' && state.activeHorizon !== 'general') document.getElementById('form-tier').value = state.activeHorizon;
+
+  const subtasksList = document.getElementById('modal-subtasks-list');
+  if (subtasksList) subtasksList.innerHTML = '';
 
   populateParentGoalDropdown();
   taskModal.style.display = 'flex';
@@ -1005,8 +1104,32 @@ function openEditModal(taskId) {
   document.getElementById('form-due').value = task.dueDate || '';
   document.getElementById('form-tags').value = (task.tags || []).join(', ');
 
+  const subtasksList = document.getElementById('modal-subtasks-list');
+  if (subtasksList) {
+    subtasksList.innerHTML = '';
+    (task.subtasks || []).forEach(st => addModalSubtaskRow(st.title, st.completed, st.id));
+  }
+
   populateParentGoalDropdown(task.parentId, task.id);
   taskModal.style.display = 'flex';
+}
+
+function addModalSubtaskRow(title = '', completed = false, id = null) {
+  const list = document.getElementById('modal-subtasks-list');
+  if (!list) return;
+  const subtaskId = id || `st_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const row = document.createElement('div');
+  row.className = 'modal-subtask-row';
+  row.setAttribute('data-subtask-id', subtaskId);
+  row.innerHTML = `
+    <input type="checkbox" ${completed ? 'checked' : ''} class="modal-subtask-chk" title="Mark step done">
+    <input type="text" class="modal-subtask-text" value="${escapeHTML(title)}" placeholder="Milestone step...">
+    <button type="button" class="modal-subtask-del-btn" title="Remove step">&times;</button>
+  `;
+  row.querySelector('.modal-subtask-del-btn').addEventListener('click', () => row.remove());
+  list.appendChild(row);
+  const textInput = row.querySelector('.modal-subtask-text');
+  if (!title && textInput) textInput.focus();
 }
 
 function closeModal() {
@@ -1019,7 +1142,6 @@ function populateParentGoalDropdown(selectedParentId = null, currentTaskId = nul
   const formParentSelect = document.getElementById('form-parent');
   if (!formParentSelect) return;
   formParentSelect.innerHTML = '<option value="">None (Independent Goal)</option>';
-  // Higher tiers to link to
   const potentialParents = state.tasks.filter(t => t.id !== currentTaskId && (t.tier === 'annual' || t.tier === 'quarterly' || t.tier === 'monthly' || t.tier === 'weekly'));
 
   potentialParents.forEach(p => {
@@ -1047,6 +1169,19 @@ function handleFormSubmit(e) {
 
   if (!title) return;
 
+  // Gather subtasks from modal builder
+  const subtaskRows = document.querySelectorAll('#modal-subtasks-list .modal-subtask-row');
+  const subtasks = Array.from(subtaskRows).map(row => {
+    const textInput = row.querySelector('.modal-subtask-text');
+    const chk = row.querySelector('.modal-subtask-chk');
+    const id = row.getAttribute('data-subtask-id');
+    return {
+      id: id || `st_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: textInput ? textInput.value.trim() : '',
+      completed: chk ? chk.checked : false
+    };
+  }).filter(st => st.title.length > 0);
+
   if (state.editingTaskId) {
     const task = state.tasks.find(t => t.id === state.editingTaskId);
     if (task) {
@@ -1058,6 +1193,7 @@ function handleFormSubmit(e) {
       task.dueDate = due;
       task.parentId = parentId;
       task.tags = tags;
+      task.subtasks = subtasks;
       showToast('Goal updated successfully.', 'success');
     }
   } else {
@@ -1075,7 +1211,8 @@ function handleFormSubmit(e) {
       priority,
       category,
       parentId,
-      tags
+      tags,
+      subtasks
     };
     state.tasks.unshift(newTask);
     showToast('New goal added!', 'success');
@@ -1084,6 +1221,60 @@ function handleFormSubmit(e) {
   saveData();
   closeModal();
   renderAll();
+}
+
+// Subtask Inline CRUD Operations
+function toggleSubtask(taskId, subtaskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.subtasks) return;
+  const subtask = task.subtasks.find(s => s.id === subtaskId);
+  if (!subtask) return;
+  subtask.completed = !subtask.completed;
+
+  // Check if all subtasks are complete
+  const allCompleted = task.subtasks.length > 0 && task.subtasks.every(s => s.completed);
+  if (allCompleted && !task.completed) {
+    showToast(`All milestones for "${task.title}" completed! 🎉`, 'success');
+  }
+
+  saveData();
+  renderAll();
+
+  if (typeof FocusEngine !== 'undefined' && FocusEngine.activeTaskId === taskId) {
+    FocusEngine.renderFocusSubtasks(task);
+  }
+}
+
+function addSubtaskInline(taskId, title) {
+  if (!title || !title.trim()) return;
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  if (!task.subtasks) task.subtasks = [];
+  const newSubtask = {
+    id: `st_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    title: title.trim(),
+    completed: false
+  };
+  task.subtasks.push(newSubtask);
+  saveData();
+  renderAll();
+  showToast('Milestone step added.', 'info');
+
+  if (typeof FocusEngine !== 'undefined' && FocusEngine.activeTaskId === taskId) {
+    FocusEngine.renderFocusSubtasks(task);
+  }
+}
+
+function deleteSubtaskInline(taskId, subtaskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.subtasks) return;
+  task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+  saveData();
+  renderAll();
+
+  if (typeof FocusEngine !== 'undefined' && FocusEngine.activeTaskId === taskId) {
+    FocusEngine.renderFocusSubtasks(task);
+  }
 }
 
 // Data Export & Import
@@ -1480,16 +1671,60 @@ const FocusEngine = {
         const label = completeBtn.querySelector('#focus-complete-btn-text');
         if (label) label.textContent = task.completed ? 'Goal Completed ✅' : 'Mark Goal Complete';
       }
+      this.renderFocusSubtasks(task);
     } else {
       if (taskTierEl) taskTierEl.textContent = '⚡ DEEP WORK SPRINT';
       if (taskTitleEl) taskTitleEl.textContent = 'Uninterrupted Flow Session';
       if (taskDescEl) taskDescEl.textContent = 'Single-task focus mode. Eliminate all context switching.';
       if (completeBtn) completeBtn.style.display = 'none';
+      const container = document.getElementById('focus-subtasks-container');
+      if (container) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+      }
     }
 
     this.reset();
     overlay.style.display = 'flex';
     lucide.createIcons();
+  },
+
+  renderFocusSubtasks(task) {
+    const container = document.getElementById('focus-subtasks-container');
+    if (!container) return;
+    const subtasks = (task && task.subtasks) ? task.subtasks : [];
+    if (subtasks.length === 0) {
+      container.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    const done = subtasks.filter(s => s.completed).length;
+    const total = subtasks.length;
+    const pct = Math.round((done / total) * 100);
+
+    container.style.display = 'block';
+    container.innerHTML = `
+      <div class="focus-subtasks-header">
+        <span>Milestone Checklist (${done}/${total})</span>
+        <span>${pct}% Done</span>
+      </div>
+      <div class="focus-subtasks-list">
+        ${subtasks.map(st => `
+          <label class="focus-subtask-item ${st.completed ? 'completed' : ''}">
+            <input type="checkbox" class="subtask-checkbox" ${st.completed ? 'checked' : ''} data-focus-subtask="${st.id}">
+            <span>${escapeHTML(st.title)}</span>
+          </label>
+        `).join('')}
+      </div>
+    `;
+
+    container.querySelectorAll('input[data-focus-subtask]').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const sId = chk.getAttribute('data-focus-subtask');
+        toggleSubtask(task.id, sId);
+      });
+    });
   },
 
   close() {

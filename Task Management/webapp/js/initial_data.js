@@ -18,6 +18,11 @@ const INITIAL_TASKS = [
       "ai",
       "career",
       "mastery"
+    ],
+    "subtasks": [
+      { "id": "st_ann1_1", "title": "Build async subagent orchestrator", "completed": true },
+      { "id": "st_ann1_2", "title": "Deploy evaluation benchmark suite", "completed": false },
+      { "id": "st_ann1_3", "title": "Publish open-source MCP tools", "completed": false }
     ]
   },
   {
@@ -36,6 +41,11 @@ const INITIAL_TASKS = [
       "finance",
       "wealth",
       "investing"
+    ],
+    "subtasks": [
+      { "id": "st_ann2_1", "title": "Automate monthly index fund DCA transfer", "completed": true },
+      { "id": "st_ann2_2", "title": "Complete debt paydown milestone", "completed": true },
+      { "id": "st_ann2_3", "title": "Rebalance portfolio for year-end dividends", "completed": false }
     ]
   },
   {
@@ -54,6 +64,11 @@ const INITIAL_TASKS = [
       "fitness",
       "running",
       "longevity"
+    ],
+    "subtasks": [
+      { "id": "st_ann3_1", "title": "Base mileage buildup (500 km logged)", "completed": true },
+      { "id": "st_ann3_2", "title": "Lactate threshold & tempo intervals", "completed": false },
+      { "id": "st_ann3_3", "title": "Complete official race registration", "completed": true }
     ]
   },
   {
@@ -72,6 +87,12 @@ const INITIAL_TASKS = [
       "q3",
       "orchestrator",
       "ai"
+    ],
+    "subtasks": [
+      { "id": "st_qrt1_1", "title": "Architecture specs & state graph design", "completed": true },
+      { "id": "st_qrt1_2", "title": "Implement Web Audio engine & Focus Mode", "completed": true },
+      { "id": "st_qrt1_3", "title": "Sub-task checklist breakdown system", "completed": false },
+      { "id": "st_qrt1_4", "title": "Production stress & latency testing", "completed": false }
     ]
   },
   {
@@ -90,6 +111,10 @@ const INITIAL_TASKS = [
       "q3",
       "investments",
       "emergency-fund"
+    ],
+    "subtasks": [
+      { "id": "st_qrt2_1", "title": "Audit trailing 6-month SaaS expenses", "completed": true },
+      { "id": "st_qrt2_2", "title": "Transfer buffer into high-yield account", "completed": true }
     ]
   },
   {
@@ -108,6 +133,11 @@ const INITIAL_TASKS = [
       "q3",
       "endurance",
       "running"
+    ],
+    "subtasks": [
+      { "id": "st_qrt3_1", "title": "Hit 10 km continuous tempo run", "completed": true },
+      { "id": "st_qrt3_2", "title": "Test electrolyte fuel strategy on 12km run", "completed": true },
+      { "id": "st_qrt3_3", "title": "Execute 15 km continuous weekend run", "completed": false }
     ]
   },
   {
@@ -126,6 +156,12 @@ const INITIAL_TASKS = [
       "august",
       "task-system",
       "webapp"
+    ],
+    "subtasks": [
+      { "id": "st_mon1_1", "title": "Create MPA layout and shared navigation shell", "completed": true },
+      { "id": "st_mon1_2", "title": "Build streak engine & milestone badges", "completed": true },
+      { "id": "st_mon1_3", "title": "Deep work focus timer with soundscapes", "completed": true },
+      { "id": "st_mon1_4", "title": "Sub-tasks & milestone decomposition", "completed": false }
     ]
   },
   {

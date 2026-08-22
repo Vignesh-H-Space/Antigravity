@@ -260,6 +260,20 @@ const Components = {
             <input type="text" id="form-tags" class="form-control" placeholder="e.g. backend, q3, sprint">
           </div>
 
+          <!-- Sub-Tasks / Milestones Checklist Builder -->
+          <div class="form-group modal-subtasks-group">
+            <label>Sub-Tasks & Milestones Checklist</label>
+            <div class="modal-subtask-add-row">
+              <input type="text" id="modal-subtask-input" class="form-control" placeholder="Add milestone step and press Enter...">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-add-modal-subtask">
+                <i data-lucide="plus"></i> <span>Add Step</span>
+              </button>
+            </div>
+            <div class="modal-subtasks-list" id="modal-subtasks-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
             <button type="submit" class="btn btn-primary" id="modal-save-btn">Save Goal</button>
@@ -301,6 +315,9 @@ const Components = {
           <div class="focus-task-tier" id="focus-task-tier">🌅 Daily Task</div>
           <h1 class="focus-task-title" id="focus-task-title">Select a Goal to Execute</h1>
           <p class="focus-task-desc" id="focus-task-desc">Single-task execution. Zero distractions.</p>
+          <div class="focus-subtasks-container" id="focus-subtasks-container" style="display:none;">
+            <!-- Subtask checklist items in focus mode -->
+          </div>
         </div>
 
         <!-- Circular Timer Ring -->
