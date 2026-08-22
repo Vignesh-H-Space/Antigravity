@@ -17,9 +17,6 @@
       <stop offset="0%" stop-color="#818cf8" stop-opacity="0.85" />
       <stop offset="100%" stop-color="#4338ca" stop-opacity="0.95" />
     </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#6366f1" flood-opacity="0.6" />
-    </filter>
   </defs>
 
   <!-- Rounded Background Tile -->
@@ -27,7 +24,7 @@
   <rect width="62" height="62" x="1" y="1" rx="15" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
 
   <!-- Tesseract Cube Icon -->
-  <g filter="url(#glow)">
+  <g>
     <!-- Top Face -->
     <polygon points="32,14 48,23 32,32 16,23" fill="url(#topFace)" />
     
