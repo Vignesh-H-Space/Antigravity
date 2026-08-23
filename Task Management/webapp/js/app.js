@@ -1585,8 +1585,20 @@ const FocusEngine = {
     const btnReset = document.getElementById('focus-btn-reset');
     if (btnReset) btnReset.addEventListener('click', () => this.reset());
 
+    const btnMinus5 = document.getElementById('focus-btn-minus5');
+    if (btnMinus5) btnMinus5.addEventListener('click', () => this.subtractFiveMinutes());
+
     const btnPlus5 = document.getElementById('focus-btn-plus5');
     if (btnPlus5) btnPlus5.addEventListener('click', () => this.addFiveMinutes());
+
+    const btnCustom = document.getElementById('focus-btn-custom-duration');
+    if (btnCustom) btnCustom.addEventListener('click', () => this.promptCustomDuration());
+
+    const digitsDisplay = document.getElementById('focus-time-digits');
+    if (digitsDisplay) {
+      digitsDisplay.title = 'Click to set custom focus duration';
+      digitsDisplay.addEventListener('click', () => this.promptCustomDuration());
+    }
 
     const btnExit = document.getElementById('focus-exit-btn');
     if (btnExit) btnExit.addEventListener('click', () => this.close());
@@ -1784,10 +1796,35 @@ const FocusEngine = {
     this.remainingSeconds = this.totalSeconds;
     this.updateDisplay();
     this.updateRing();
+    this.highlightActivePreset();
+  },
 
-    document.querySelectorAll('.focus-preset-chip').forEach(c => {
-      c.classList.toggle('active', parseInt(c.getAttribute('data-minutes'), 10) === minutes);
+  promptCustomDuration() {
+    const currentMins = Math.round(this.totalSeconds / 60);
+    const input = prompt("Set custom focus duration in minutes (1 to 360):", currentMins);
+    if (input !== null) {
+      const parsed = parseInt(input.trim(), 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 360) {
+        if (this.isRunning) this.pause();
+        this.setDuration(parsed);
+        showToast(`Focus timer set to ${parsed}m.`, 'info');
+      } else if (input.trim() !== '') {
+        showToast('Please enter a valid number of minutes between 1 and 360.', 'error');
+      }
+    }
+  },
+
+  highlightActivePreset() {
+    const currentMins = Math.round(this.totalSeconds / 60);
+    let matched = false;
+    document.querySelectorAll('.focus-preset-chip[data-minutes]').forEach(c => {
+      const mins = parseInt(c.getAttribute('data-minutes'), 10);
+      const isMatch = mins === currentMins;
+      c.classList.toggle('active', isMatch);
+      if (isMatch) matched = true;
     });
+    const customChip = document.getElementById('focus-btn-custom-duration');
+    if (customChip) customChip.classList.toggle('active', !matched);
   },
 
   toggle() {
@@ -1860,11 +1897,27 @@ const FocusEngine = {
     if (toggleText) toggleText.textContent = 'Start Focus';
   },
 
+  subtractFiveMinutes() {
+    if (this.totalSeconds <= 300) {
+      this.totalSeconds = Math.max(60, this.totalSeconds - 60);
+      this.remainingSeconds = Math.max(0, this.remainingSeconds - 60);
+    } else {
+      this.totalSeconds -= 300;
+      this.remainingSeconds = Math.max(0, this.remainingSeconds - 300);
+    }
+    this.durationMinutes = Math.round(this.totalSeconds / 60);
+    this.updateDisplay();
+    this.updateRing();
+    this.highlightActivePreset();
+  },
+
   addFiveMinutes() {
     this.totalSeconds += 300;
     this.remainingSeconds += 300;
+    this.durationMinutes = Math.round(this.totalSeconds / 60);
     this.updateDisplay();
     this.updateRing();
+    this.highlightActivePreset();
   },
 
   updateDisplay() {

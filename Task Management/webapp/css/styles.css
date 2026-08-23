@@ -2304,6 +2304,13 @@ body {
   color: var(--text-primary);
   line-height: 1;
   letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.focus-time-digits:hover {
+  color: #818cf8;
 }
 
 .focus-time-status {
@@ -2350,12 +2357,41 @@ body {
   border-color: #6366f1;
 }
 
+.focus-custom-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+.focus-custom-chip svg {
+  width: 12px;
+  height: 12px;
+}
+
 /* Controls */
 .focus-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
+}
+
+.focus-adjust-btn {
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+.focus-adjust-btn:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .focus-main-action {

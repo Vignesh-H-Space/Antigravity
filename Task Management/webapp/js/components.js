@@ -324,16 +324,24 @@ const Components = {
           </div>
         </div>
 
-        <!-- Timer Presets -->
+        <!-- Timer Presets & Custom Duration -->
         <div class="focus-presets">
-          <button class="focus-preset-chip active" data-minutes="25">25m Sprint</button>
-          <button class="focus-preset-chip" data-minutes="50">50m Deep Block</button>
-          <button class="focus-preset-chip" data-minutes="90">90m Flow State</button>
-          <button class="focus-preset-chip" data-minutes="5">5m Break</button>
+          <button class="focus-preset-chip" data-minutes="15">15m</button>
+          <button class="focus-preset-chip active" data-minutes="25">25m</button>
+          <button class="focus-preset-chip" data-minutes="45">45m</button>
+          <button class="focus-preset-chip" data-minutes="60">60m</button>
+          <button class="focus-preset-chip" data-minutes="90">90m</button>
+          <button class="focus-preset-chip focus-custom-chip" id="focus-btn-custom-duration" title="Set exact custom minutes">
+            <i data-lucide="sliders-horizontal"></i>
+            <span>Custom...</span>
+          </button>
         </div>
 
-        <!-- Control Actions -->
+        <!-- Control Actions with -5m, Reset, Play/Pause, +5m -->
         <div class="focus-controls">
+          <button class="btn btn-ghost btn-sm focus-adjust-btn" id="focus-btn-minus5" title="Subtract 5 Minutes (-5m)">
+            <span>-5m</span>
+          </button>
           <button class="btn btn-secondary btn-sm" id="focus-btn-reset" title="Reset (R)">
             <i data-lucide="rotate-ccw"></i>
             <span>Reset</span>
@@ -342,7 +350,7 @@ const Components = {
             <i data-lucide="play" id="focus-play-icon"></i>
             <span id="focus-toggle-text">Start Focus</span>
           </button>
-          <button class="btn btn-ghost btn-sm" id="focus-btn-plus5" title="Add 5 Minutes">
+          <button class="btn btn-ghost btn-sm focus-adjust-btn" id="focus-btn-plus5" title="Add 5 Minutes (+5m)">
             <span>+5m</span>
           </button>
         </div>
