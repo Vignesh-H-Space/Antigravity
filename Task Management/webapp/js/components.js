@@ -416,6 +416,84 @@ const Components = {
       </div>
     </div>
 
+    <!-- 🌅 Morning Priming Modal (The Rule of 3) -->
+    <div class="modal-backdrop" id="morning-priming-modal" style="display: none;">
+      <div class="ritual-modal-card">
+        <div class="ritual-modal-header">
+          <div class="ritual-header-icon">🌅</div>
+          <div>
+            <h3 class="ritual-modal-title">Morning Priming: The Rule of 3</h3>
+            <p class="ritual-modal-sub">Pick your Top 3 Non-Negotiable Wins for today to lock in your focus.</p>
+          </div>
+          <button class="modal-close-btn" onclick="RitualsEngine.closeModals();">&times;</button>
+        </div>
+        <div class="ritual-modal-body">
+          <div class="ritual-tasks-picker-list" id="morning-tasks-picker-list">
+            <!-- Injected by RitualsEngine.openMorningModal() -->
+          </div>
+        </div>
+        <div class="ritual-modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="RitualsEngine.closeModals();">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="RitualsEngine.saveMorningWins();">
+            <i data-lucide="lock"></i>
+            <span>Lock in Top 3 Wins (+20 XP)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🌙 Evening Shutdown Protocol Modal -->
+    <div class="modal-backdrop" id="evening-shutdown-modal" style="display: none;">
+      <div class="ritual-modal-card evening-modal">
+        <div class="ritual-modal-header">
+          <div class="ritual-header-icon">🌙</div>
+          <div>
+            <h3 class="ritual-modal-title">Evening Shutdown & Mind Sweep</h3>
+            <p class="ritual-modal-sub">Debrief your day, record insights, and roll over unfinished tasks with zero guilt.</p>
+          </div>
+          <button class="modal-close-btn" onclick="RitualsEngine.closeModals();">&times;</button>
+        </div>
+        <div class="ritual-modal-body">
+          <!-- Today's Execution Recap -->
+          <div class="evening-recap-grid">
+            <div class="recap-box">
+              <span class="recap-val" id="evening-metric-tasks">0 Done</span>
+              <span class="recap-lbl">Goals Cleared</span>
+            </div>
+            <div class="recap-box">
+              <span class="recap-val" id="evening-metric-focus">0h</span>
+              <span class="recap-lbl">Deep Work Hours</span>
+            </div>
+            <div class="recap-box accent">
+              <span class="recap-val" id="evening-metric-xp">0 XP</span>
+              <span class="recap-lbl">Total XP</span>
+            </div>
+          </div>
+
+          <!-- 1-Sentence Executive Reflection -->
+          <div class="evening-section">
+            <label class="evening-label">📝 1-Sentence Executive Reflection / Key Takeaway</label>
+            <textarea id="evening-reflection-text" class="form-control" rows="2" placeholder="What went well today? What is the single biggest win or learning?"></textarea>
+          </div>
+
+          <!-- Mind Sweep & Rollover -->
+          <div class="evening-section">
+            <label class="evening-label">🔄 Mind Sweep (Uncompleted Daily Tasks)</label>
+            <div class="evening-rollover-list" id="evening-rollover-list">
+              <!-- Injected by JS -->
+            </div>
+          </div>
+        </div>
+        <div class="ritual-modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="RitualsEngine.closeModals();">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="RitualsEngine.completeEveningShutdown();">
+            <i data-lucide="check-circle"></i>
+            <span>Complete Daily Shutdown (+50 XP)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Floating XP Burst Animation Container -->
     <div class="xp-burst-container" id="xp-burst-container"></div>
 

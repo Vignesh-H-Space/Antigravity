@@ -36,6 +36,18 @@
               </div>
               <h2 class="command-greeting-title" id="home-greeting-title">Welcome back 👋</h2>
               <p class="command-greeting-desc" id="home-greeting-desc">Your multi-horizon flight plan for today. Lock in and execute.</p>
+              
+              <!-- Daily Ritual Buttons -->
+              <div class="ritual-quick-actions">
+                <button class="ritual-action-btn morning" onclick="RitualsEngine.openMorningModal();" title="Set Today's Top 3 Wins">
+                  <span class="ritual-btn-emoji">🌅</span>
+                  <span>Morning Setup</span>
+                </button>
+                <button class="ritual-action-btn evening" onclick="RitualsEngine.openEveningModal();" title="Review Day & Roll Over Tasks">
+                  <span class="ritual-btn-emoji">🌙</span>
+                  <span>Evening Review</span>
+                </button>
+              </div>
             </div>
             
             <div class="command-quick-metrics">
@@ -54,6 +66,11 @@
                 <span class="quick-metric-lbl">Urgent Open</span>
               </div>
             </div>
+          </div>
+
+          <!-- Top 3 Priority Focus Banner (The Rule of 3) -->
+          <div class="morning-priority-banner" id="morning-priority-banner">
+            <!-- Injected by RitualsEngine.renderMorningBanner() -->
           </div>
 
           <!-- Spotlight Target Priority Card -->
@@ -251,6 +268,7 @@
   <script src="js/initial_data.js"></script>
   <script src="js/xp_engine.js"></script>
   <script src="js/habits_engine.js"></script>
+  <script src="js/rituals_engine.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
