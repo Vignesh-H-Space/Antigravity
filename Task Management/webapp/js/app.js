@@ -73,6 +73,8 @@ function init() {
       headerConfig = { title: 'Strategic Goal Cascade', subtitle: 'Multi-horizon vertical alignment linking daily actions to annual vision.', showSearch: false };
     } else if (page === 'analytics') {
       headerConfig = { title: 'Productivity & Goal Analytics', subtitle: 'Comprehensive metric tracking and horizon performance.', showSearch: false };
+    } else if (page === 'roadmap') {
+      headerConfig = { title: '12-Month Horizon Timeline', subtitle: 'Interactive Gantt roadmap connecting annual & quarterly goals to deadlines.', showSearch: false };
     } else if (page === 'profile') {
       headerConfig = { title: 'Your Profile', subtitle: 'Stats, badges, and activity history.', showSearch: false };
     }
@@ -84,6 +86,7 @@ function init() {
   FocusEngine.init();
   if (typeof XPEngine !== 'undefined') XPEngine.init();
   if (typeof HabitsEngine !== 'undefined') HabitsEngine.init();
+  if (typeof RoadmapEngine !== 'undefined') RoadmapEngine.init();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
@@ -577,6 +580,8 @@ function renderAll() {
   } else if (page === 'analytics') {
     updateProgressCards();
     renderAnalyticsView();
+  } else if (page === 'roadmap') {
+    if (typeof RoadmapEngine !== 'undefined') RoadmapEngine.render();
   } else if (page === 'profile') {
     renderProfileView();
   }
