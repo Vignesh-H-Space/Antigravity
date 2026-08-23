@@ -2741,3 +2741,564 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ── Gamified Leveling & Executive XP Engine ──────────────── */
+
+/* Header XP Pill */
+.header-xp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.header-xp-pill:hover {
+  background: var(--bg-input);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.header-level-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fff;
+  background: #6366f1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.04em;
+}
+
+.header-xp-number {
+  font-family: var(--font-heading);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.header-multiplier-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+
+/* Floating XP Burst Popups */
+.xp-burst-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.xp-burst-item {
+  position: absolute;
+  animation: xpFloatPop 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+.xp-burst-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f172a;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+[data-theme="light"] .xp-burst-content {
+  background: #1e293b;
+}
+
+.xp-burst-amount {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #818cf8;
+}
+
+.xp-burst-mult {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.2);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.xp-burst-reason {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+@keyframes xpFloatPop {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.85);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.05);
+  }
+  30% {
+    transform: translateY(-16px) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-34px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+}
+
+/* Rank-Up Celebration Modal */
+.rank-up-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  max-width: 440px;
+  width: 90%;
+  padding: 32px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.rank-up-sparkle {
+  font-size: 3rem;
+  line-height: 1;
+  animation: bounceSlow 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes bounceSlow {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+.rank-up-super-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #818cf8;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rank-up-badge-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0;
+}
+
+.rank-up-badge-old {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  padding: 4px 12px;
+  border-radius: 14px;
+}
+
+.rank-up-arrow {
+  width: 18px;
+  height: 18px;
+  color: #6366f1;
+}
+
+.rank-up-badge-new {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  background: #6366f1;
+  padding: 5px 16px;
+  border-radius: 16px;
+}
+
+.rank-up-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.rank-up-message {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.rank-up-btn {
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+  padding: 12px 20px;
+}
+
+/* Daily Executive Quests Board on Home Hero */
+.daily-quest-board {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.quest-board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quest-board-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #a5b4fc;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.quest-board-title svg {
+  width: 14px;
+  height: 14px;
+  color: #818cf8;
+}
+
+.quest-refresh-tag {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.quest-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.quest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.quest-item:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.quest-item.completed {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.quest-item-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+
+.quest-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.quest-icon-box.done {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  font-weight: 800;
+}
+
+.quest-icon-box svg {
+  width: 13px;
+  height: 13px;
+}
+
+.quest-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.quest-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.quest-progress-track {
+  height: 4px;
+  background: var(--bg-input);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.quest-progress-bar {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.quest-item.completed .quest-progress-bar {
+  background: #10b981;
+}
+
+.quest-reward {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.quest-xp-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.12);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.quest-item.completed .quest-xp-badge {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.quest-status-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Executive XP Level Card on Profile */
+.profile-xp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.xp-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.xp-card-rank-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.xp-level-badge {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  background: #6366f1;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  letter-spacing: 0.04em;
+}
+
+.xp-rank-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+}
+
+.xp-rank-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.xp-card-total-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.xp-total-digits {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.xp-multiplier-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.xp-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.xp-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.xp-track {
+  height: 8px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* Badge Collection & Unlocked State */
+.badge-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.badge-count-pill {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 3px 10px;
+  border-radius: 14px;
+}
+
+.profile-badge-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.profile-badge-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.profile-badge-item.earned {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.profile-badge-item.locked {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+
+.badge-status.earned {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.badge-status.locked {
+  color: var(--text-muted);
+}
+
+/* Activity XP History Styling */
+.activity-xp-gain {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #818cf8;
+  margin-right: 6px;
+}
+
+.activity-reason {
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+
+.activity-mult {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 1px 5px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+
