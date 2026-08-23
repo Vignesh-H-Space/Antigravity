@@ -83,6 +83,7 @@ function init() {
   bindEvents();
   FocusEngine.init();
   if (typeof XPEngine !== 'undefined') XPEngine.init();
+  if (typeof HabitsEngine !== 'undefined') HabitsEngine.init();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
@@ -570,6 +571,7 @@ function renderAll() {
     updateHeaderTitle();
     updateProgressCards();
     renderTaskList();
+    if (typeof HabitsEngine !== 'undefined') HabitsEngine.renderWidget();
   } else if (page === 'cascade') {
     renderCascadeView();
   } else if (page === 'analytics') {
