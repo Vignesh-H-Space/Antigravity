@@ -87,6 +87,7 @@ function init() {
   if (typeof XPEngine !== 'undefined') XPEngine.init();
   if (typeof HabitsEngine !== 'undefined') HabitsEngine.init();
   if (typeof RoadmapEngine !== 'undefined') RoadmapEngine.init();
+  if (typeof RitualsEngine !== 'undefined') RitualsEngine.init();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
@@ -575,6 +576,7 @@ function renderAll() {
     updateProgressCards();
     renderTaskList();
     if (typeof HabitsEngine !== 'undefined') HabitsEngine.renderWidget();
+    if (typeof RitualsEngine !== 'undefined') RitualsEngine.renderMorningBanner();
   } else if (page === 'cascade') {
     renderCascadeView();
   } else if (page === 'analytics') {
