@@ -1594,27 +1594,26 @@ const FocusEngine = {
     const btnHeaderFocus = document.getElementById('btn-header-focus');
     if (btnHeaderFocus) {
       btnHeaderFocus.addEventListener('click', () => {
-        const incomplete = state.tasks.filter(t => !t.completed);
-        const top = incomplete.find(t => t.tier === 'daily' && t.priority === 'urgent')
-          || incomplete.find(t => t.tier === 'daily')
-          || incomplete[0];
-        this.open(top ? top.id : null);
+        this.open();
+      });
+    }
+
+    const taskSelect = document.getElementById('focus-task-select');
+    if (taskSelect) {
+      taskSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        this.setTask(val || null);
       });
     }
 
     const btnComplete = document.getElementById('focus-btn-complete-task');
     if (btnComplete) btnComplete.addEventListener('click', () => this.markTaskComplete());
 
-    // Soundscape controls
+    // Soundscape controls (Moved Downwards)
     const soundSelect = document.getElementById('focus-sound-select');
     if (soundSelect) {
       soundSelect.addEventListener('change', (e) => {
         this.currentSound = e.target.value;
-        const label = document.getElementById('focus-sound-label');
-        if (label) {
-          const names = { rain: 'Rain', waves: 'Waves', binaural: 'Binaural', mute: 'Mute' };
-          label.textContent = names[this.currentSound] || 'Sound';
-        }
         if (this.isRunning) {
           this.stopAudio();
           this.playAudio(this.currentSound);
@@ -1639,10 +1638,10 @@ const FocusEngine = {
         if (e.key === 'Escape') {
           e.preventDefault();
           this.close();
-        } else if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        } else if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
           e.preventDefault();
           this.toggle();
-        } else if ((e.key === 'r' || e.key === 'R') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        } else if ((e.key === 'r' || e.key === 'R') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
           e.preventDefault();
           this.reset();
         }
@@ -1651,15 +1650,63 @@ const FocusEngine = {
   },
 
   open(taskId = null) {
-    this.activeTaskId = taskId;
     const overlay = document.getElementById('focus-mode-overlay');
     if (!overlay) return;
 
+    // If no taskId passed, smartly pick top incomplete Daily, Weekly, Monthly, Quarterly, Annual
+    if (!taskId) {
+      const incomplete = state.tasks.filter(t => !t.completed);
+      const top = incomplete.find(t => t.tier === 'daily' && t.priority === 'urgent')
+        || incomplete.find(t => t.tier === 'daily')
+        || incomplete.find(t => t.tier === 'weekly')
+        || incomplete.find(t => t.tier === 'monthly')
+        || incomplete.find(t => t.tier === 'quarterly')
+        || incomplete.find(t => t.tier === 'annual')
+        || (incomplete.length > 0 ? incomplete[0] : null);
+      taskId = top ? top.id : null;
+    }
+
+    // Populate Task Dropdown Switcher
+    this.populateTaskPicker(taskId);
+
+    this.setTask(taskId);
+    this.reset();
+    overlay.style.display = 'flex';
+    lucide.createIcons();
+  },
+
+  populateTaskPicker(selectedTaskId = null) {
+    const select = document.getElementById('focus-task-select');
+    if (!select) return;
+    select.innerHTML = '<option value="">⚡ Free Flow Sprint</option>';
+
+    TIERS.forEach(tier => {
+      const tierTasks = state.tasks.filter(t => t.tier === tier.id && !t.completed);
+      if (tierTasks.length > 0) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = `${tier.emoji} ${tier.name}`;
+        tierTasks.forEach(task => {
+          const opt = document.createElement('option');
+          opt.value = task.id;
+          opt.textContent = `[${tier.name.split(' ')[0]}] ${task.title.substring(0, 32)}${task.title.length > 32 ? '...' : ''}`;
+          if (selectedTaskId === task.id) opt.selected = true;
+          optgroup.appendChild(opt);
+        });
+        select.appendChild(optgroup);
+      }
+    });
+  },
+
+  setTask(taskId) {
+    this.activeTaskId = taskId;
     const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
     const taskTierEl = document.getElementById('focus-task-tier');
     const taskTitleEl = document.getElementById('focus-task-title');
     const taskDescEl = document.getElementById('focus-task-desc');
     const completeBtn = document.getElementById('focus-btn-complete-task');
+    const select = document.getElementById('focus-task-select');
+
+    if (select) select.value = taskId || '';
 
     if (task) {
       const tierObj = TIERS.find(t => t.id === task.tier) || { emoji: '📌', name: 'Task' };
@@ -1683,10 +1730,6 @@ const FocusEngine = {
         container.innerHTML = '';
       }
     }
-
-    this.reset();
-    overlay.style.display = 'flex';
-    lucide.createIcons();
   },
 
   renderFocusSubtasks(task) {
@@ -1706,7 +1749,7 @@ const FocusEngine = {
     container.style.display = 'block';
     container.innerHTML = `
       <div class="focus-subtasks-header">
-        <span>Milestone Checklist (${done}/${total})</span>
+        <span>Milestones (${done}/${total})</span>
         <span>${pct}% Done</span>
       </div>
       <div class="focus-subtasks-list">
@@ -1833,7 +1876,7 @@ const FocusEngine = {
     if (digitsEl) digitsEl.textContent = str;
 
     if (this.isRunning) {
-      document.title = `(${str}) Deep Work | Tesseract`;
+      document.title = `(${str}) Focus Mode | Tesseract`;
     } else {
       document.title = 'Tesseract | Multi-Horizon Goal & Task Matrix';
     }
@@ -1842,7 +1885,7 @@ const FocusEngine = {
   updateRing() {
     const ring = document.getElementById('focus-ring-progress');
     if (!ring) return;
-    const circumference = 722.56; // 2 * pi * 115
+    const circumference = 659.73; // 2 * pi * 105
     const progress = Math.max(0, this.remainingSeconds / this.totalSeconds);
     const offset = circumference * (1 - progress);
     ring.style.strokeDashoffset = offset;
