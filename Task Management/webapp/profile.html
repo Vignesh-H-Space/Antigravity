@@ -53,6 +53,32 @@
           </div>
         </div>
 
+        <!-- Executive Level & XP Progression Card -->
+        <div class="profile-xp-card" id="profile-xp-card">
+          <div class="xp-card-top">
+            <div class="xp-card-rank-info">
+              <span class="xp-level-badge" id="profile-level-badge">Lvl 1</span>
+              <div>
+                <h3 class="xp-rank-title" id="profile-rank-title">🌱 Apprentice</h3>
+                <span class="xp-rank-desc" id="profile-rank-desc">Embarking on the execution matrix</span>
+              </div>
+            </div>
+            <div class="xp-card-total-box">
+              <span class="xp-total-digits" id="profile-total-xp">120 XP</span>
+              <span class="xp-multiplier-pill" id="profile-multiplier-pill">1.0x Multiplier</span>
+            </div>
+          </div>
+          <div class="xp-progress-section">
+            <div class="xp-progress-labels">
+              <span id="profile-xp-in-level">120 / 500 XP to next rank</span>
+              <span id="profile-next-rank-preview">Next: 🎯 Operator</span>
+            </div>
+            <div class="xp-track">
+              <div class="xp-fill" id="profile-xp-fill" style="width: 24%"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Stats Row -->
         <div class="profile-stats-row" id="profile-stats-row">
           <div class="profile-stat-card">
@@ -72,8 +98,8 @@
             <div class="profile-stat-label">Day Streak 🔥</div>
           </div>
           <div class="profile-stat-card">
-            <div class="profile-stat-value" id="pstat-best-streak">0</div>
-            <div class="profile-stat-label">Best Streak</div>
+            <div class="profile-stat-value" id="pstat-shields">1 🛡️</div>
+            <div class="profile-stat-label">Streak Shields</div>
           </div>
           <div class="profile-stat-card">
             <div class="profile-stat-value" id="pstat-deep-work">0h</div>
@@ -81,10 +107,15 @@
           </div>
         </div>
 
-        <!-- Badge Showcase -->
+        <!-- Achievement Badge Showcase -->
         <div class="profile-section-card">
-          <h3 class="profile-section-title"><i data-lucide="award"></i> Badge Collection</h3>
-          <p class="profile-section-sub">Earn badges by maintaining your daily streak. Complete all daily tasks to keep it alive.</p>
+          <div class="badge-section-header">
+            <div>
+              <h3 class="profile-section-title"><i data-lucide="award"></i> Lifetime Achievement Badges</h3>
+              <p class="profile-section-sub">Earn badges by conquering tactical milestones, deep work hours, and maintaining daily streaks.</p>
+            </div>
+            <span class="badge-count-pill" id="profile-badge-count">0 / 12 Unlocked</span>
+          </div>
           <div class="profile-badge-showcase" id="profile-badge-showcase">
             <!-- Injected by JS -->
           </div>
@@ -98,9 +129,9 @@
           </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- Recent Activity & XP History -->
         <div class="profile-section-card">
-          <h3 class="profile-section-title"><i data-lucide="activity"></i> Recent Activity</h3>
+          <h3 class="profile-section-title"><i data-lucide="activity"></i> Recent XP & Execution History</h3>
           <div class="profile-activity-list" id="profile-activity-list">
             <!-- Injected by JS -->
           </div>
@@ -112,6 +143,7 @@
   <!-- Scripts -->
   <script src="js/components.js"></script>
   <script src="js/initial_data.js"></script>
+  <script src="js/xp_engine.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

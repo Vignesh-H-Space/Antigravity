@@ -157,6 +157,14 @@ const Components = {
           <button class="clear-search" id="clear-search" style="display:none;">&times;</button>
         </div>
         ` : ''}
+        
+        <!-- Live Header XP & Rank Widget -->
+        <div class="header-xp-pill" id="header-xp-pill" onclick="window.location.href='profile.html'" title="View Level, Badges & XP Profile">
+          <span class="header-level-tag" id="header-level-badge">Lvl 1</span>
+          <span class="header-xp-number" id="header-xp-val">120 XP</span>
+          <span class="header-multiplier-tag" id="header-multiplier-badge" style="display:none;">1.2x 🔥</span>
+        </div>
+
         <button class="btn btn-secondary" id="btn-header-focus" title="Open Focus Mode">
           <i data-lucide="zap"></i>
           <span>Focus Mode</span>
@@ -383,6 +391,28 @@ const Components = {
         </div>
       </div>
     </div>
+
+    <!-- Rank Up Celebration Ceremony Modal -->
+    <div class="modal-backdrop" id="rank-up-modal" style="display: none;">
+      <div class="rank-up-card">
+        <div class="rank-up-sparkle">👑</div>
+        <span class="rank-up-super-label">EXECUTIVE LEVEL UP</span>
+        <div class="rank-up-badge-container">
+          <span class="rank-up-badge-old" id="rank-up-old-level">Lvl 1</span>
+          <i data-lucide="arrow-right" class="rank-up-arrow"></i>
+          <span class="rank-up-badge-new" id="rank-up-new-level">Lvl 2</span>
+        </div>
+        <h2 class="rank-up-title" id="rank-up-title">🎯 Operator</h2>
+        <p class="rank-up-message">Your high-leverage execution velocity has unlocked an elite executive status.</p>
+        <button class="btn btn-primary rank-up-btn" onclick="XPEngine.closeRankUpModal();">
+          <span>Continue Execution</span>
+          <i data-lucide="zap"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating XP Burst Animation Container -->
+    <div class="xp-burst-container" id="xp-burst-container"></div>
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toast-container"></div>

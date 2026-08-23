@@ -82,6 +82,7 @@ function init() {
 
   bindEvents();
   FocusEngine.init();
+  if (typeof XPEngine !== 'undefined') XPEngine.init();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
@@ -447,7 +448,7 @@ function bindEvents() {
 }
 
 // Toggle Task Completion
-function toggleTaskCompletion(taskId) {
+function toggleTaskCompletion(taskId, clickEvent = null) {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
 
@@ -457,6 +458,36 @@ function toggleTaskCompletion(taskId) {
 
   if (task.completed) {
     triggerConfetti();
+    
+    // Gamified XP Awarding
+    if (typeof XPEngine !== 'undefined') {
+      const xpMap = {
+        daily: XP_VALUES.DAILY_TASK,
+        weekly: XP_VALUES.WEEKLY_TASK,
+        monthly: XP_VALUES.MONTHLY_TASK,
+        quarterly: XP_VALUES.QUARTERLY_TASK,
+        annual: XP_VALUES.ANNUAL_VISION
+      };
+      const xp = xpMap[task.tier] || 10;
+      const tierObj = TIERS.find(t => t.id === task.tier) || { name: 'Task' };
+      const sourceEl = clickEvent ? clickEvent.target : null;
+      
+      XPEngine.award(xp, `${tierObj.name} Completed`, sourceEl);
+
+      // Quest updates
+      if (task.tier === 'daily') {
+        XPEngine.updateQuestProgress('daily_tasks', 1);
+      } else {
+        XPEngine.updateQuestProgress('higher_tier', 1);
+      }
+
+      // Check for Perfect Day bonus (100% daily tasks done)
+      const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
+      if (dailyTasks.length > 0 && dailyTasks.every(t => t.completed)) {
+        XPEngine.award(XP_VALUES.PERFECT_DAY_BONUS, '🎯 Perfect Execution Bonus (All Daily Goals Done)');
+      }
+    }
+
     showToast(`Completed: "${task.title}" 🎉`, 'success');
   } else {
     showToast(`Reopened: "${task.title}"`, 'info');
@@ -546,6 +577,10 @@ function renderAll() {
     renderAnalyticsView();
   } else if (page === 'profile') {
     renderProfileView();
+  }
+
+  if (typeof XPEngine !== 'undefined') {
+    XPEngine.updateUI();
   }
 
   lucide.createIcons();
@@ -1224,12 +1259,17 @@ function handleFormSubmit(e) {
 }
 
 // Subtask Inline CRUD Operations
-function toggleSubtask(taskId, subtaskId) {
+function toggleSubtask(taskId, subtaskId, clickEvent = null) {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task || !task.subtasks) return;
   const subtask = task.subtasks.find(s => s.id === subtaskId);
   if (!subtask) return;
   subtask.completed = !subtask.completed;
+
+  if (subtask.completed && typeof XPEngine !== 'undefined') {
+    XPEngine.award(XP_VALUES.SUBTASK, 'Milestone Step Checked', clickEvent ? clickEvent.target : null);
+    XPEngine.updateQuestProgress('subtasks', 1);
+  }
 
   // Check if all subtasks are complete
   const allCompleted = task.subtasks.length > 0 && task.subtasks.every(s => s.completed);
@@ -1365,7 +1405,9 @@ function renderProfileView() {
   const profileNameEl = document.getElementById('profile-name');
   const profileTaglineEl = document.getElementById('profile-tagline');
   if (profileNameEl) profileNameEl.textContent = profile.name;
-  if (profileTaglineEl) profileTaglineEl.textContent = tagline;
+  if (profileTaglineEl) {
+    profileTaglineEl.textContent = (typeof XPEngine !== 'undefined') ? XPEngine.data.rankTitle : tagline;
+  }
   
   const avatarImg = document.getElementById('profile-avatar-img');
   const avatarFallback = document.getElementById('profile-avatar-fallback');
@@ -1388,53 +1430,66 @@ function renderProfileView() {
     joinedDateEl.textContent = `Member since ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
   }
 
+  // Executive Level & XP Card
+  if (typeof XPEngine !== 'undefined') {
+    const prog = XPEngine.getLevelProgress();
+    const lvlBadge = document.getElementById('profile-level-badge');
+    const rankTitle = document.getElementById('profile-rank-title');
+    const rankDesc = document.getElementById('profile-rank-desc');
+    const totalXP = document.getElementById('profile-total-xp');
+    const multPill = document.getElementById('profile-multiplier-pill');
+    const xpInLevel = document.getElementById('profile-xp-in-level');
+    const nextRank = document.getElementById('profile-next-rank-preview');
+    const xpFill = document.getElementById('profile-xp-fill');
+
+    if (lvlBadge) lvlBadge.textContent = `Lvl ${prog.level}`;
+    if (rankTitle) rankTitle.textContent = prog.title;
+    const currentThreshold = LEVEL_THRESHOLDS.find(t => t.level === prog.level);
+    if (rankDesc && currentThreshold) rankDesc.textContent = currentThreshold.desc;
+    if (totalXP) totalXP.textContent = `${prog.totalXP.toLocaleString()} XP`;
+    if (multPill) {
+      const mult = XPEngine.getStreakMultiplier();
+      multPill.textContent = `${mult}x Streak Multiplier 🔥`;
+    }
+    if (xpInLevel) xpInLevel.textContent = `${prog.xpInCurrentLevel.toLocaleString()} / ${prog.xpNeededForNext.toLocaleString()} XP (${prog.remainingXP.toLocaleString()} XP to level up)`;
+    if (nextRank) nextRank.textContent = `Next: ${prog.nextTitle}`;
+    if (xpFill) xpFill.style.width = `${prog.percent}%`;
+  }
+
   // Stats cards
   const elTotal = document.getElementById('pstat-total-tasks');
   const elCompleted = document.getElementById('pstat-completed');
   const elRate = document.getElementById('pstat-completion-rate');
   const elStreak = document.getElementById('pstat-streak');
+  const elShields = document.getElementById('pstat-shields');
   if (elTotal) elTotal.textContent = total;
   if (elCompleted) elCompleted.textContent = completed.length;
   if (elRate) elRate.textContent = `${rate}%`;
-  if (elStreak) elStreak.textContent = streak.count;
-  if (elBestStreak) elBestStreak.textContent = bestStreak;
+  if (elStreak) elStreak.textContent = (typeof XPEngine !== 'undefined') ? XPEngine.data.streak : streak.count;
+  if (elShields) elShields.textContent = `${(typeof XPEngine !== 'undefined') ? (XPEngine.data.streakShields || 0) : 0} 🛡️`;
 
   const elDeepWork = document.getElementById('pstat-deep-work');
   if (elDeepWork && typeof FocusEngine !== 'undefined') {
     elDeepWork.textContent = `${FocusEngine.getTotalHours()}h`;
   }
 
-  // Badge showcase
+  // Lifetime Badge Showcase
   const badgeContainer = document.getElementById('profile-badge-showcase');
-  if (badgeContainer) {
+  const badgeCountEl = document.getElementById('profile-badge-count');
+  if (badgeContainer && typeof XPEngine !== 'undefined') {
     badgeContainer.innerHTML = '';
-    const count = streak.count;
+    const earnedBadges = XPEngine.data.badges || [];
+    if (badgeCountEl) badgeCountEl.textContent = `${earnedBadges.length} / ${BADGE_DEFINITIONS.length} Unlocked`;
 
-    STREAK_BADGES.forEach((badge, idx) => {
-      const earned = count >= badge.days;
-      const isNext = !earned && (idx === 0 || count >= STREAK_BADGES[idx - 1].days);
-
-      const remaining = badge.days - count;
-      let statusText = '';
-      let statusClass = '';
-      if (earned) {
-        statusText = '✓ Earned';
-        statusClass = 'earned';
-      } else if (isNext) {
-        statusText = `${remaining} day${remaining !== 1 ? 's' : ''} to go`;
-        statusClass = 'next';
-      } else {
-        statusText = `${badge.days} days`;
-        statusClass = 'locked';
-      }
-
+    BADGE_DEFINITIONS.forEach(badge => {
+      const isEarned = earnedBadges.includes(badge.id);
       const el = document.createElement('div');
-      el.className = `profile-badge-item ${statusClass}`;
+      el.className = `profile-badge-item ${isEarned ? 'earned' : 'locked'}`;
       el.innerHTML = `
-        <span class="badge-emoji">${badge.emoji}</span>
-        <span class="badge-name">${badge.name}</span>
-        <span class="badge-days">${badge.days} day streak</span>
-        <span class="badge-status">${statusText}</span>
+        <span class="badge-emoji">${badge.icon}</span>
+        <span class="badge-name">${escapeHTML(badge.name)}</span>
+        <span class="badge-days">${escapeHTML(badge.desc)}</span>
+        <span class="badge-status ${isEarned ? 'earned' : 'locked'}">${isEarned ? '✓ Unlocked' : '🔒 Locked'}</span>
       `;
       badgeContainer.appendChild(el);
     });
@@ -1463,35 +1518,34 @@ function renderProfileView() {
     });
   }
 
-  // Recent activity (completed tasks, sorted by completedAt)
+  // Recent XP & Activity history
   const activityContainer = document.getElementById('profile-activity-list');
   if (activityContainer) {
     activityContainer.innerHTML = '';
 
-    const recentCompleted = tasks
-      .filter(t => t.completedAt)
-      .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
-      .slice(0, 15);
+    const history = (typeof XPEngine !== 'undefined' && XPEngine.data.history && XPEngine.data.history.length > 0)
+      ? XPEngine.data.history
+      : [];
 
-    if (recentCompleted.length === 0) {
-      activityContainer.innerHTML = '<div class="profile-empty-activity">No completed tasks yet. Start checking off your goals!</div>';
+    if (history.length === 0) {
+      activityContainer.innerHTML = '<div class="profile-empty-activity">No XP logged yet. Start completing goals to gain executive level!</div>';
     } else {
-      recentCompleted.forEach(task => {
-        const tier = TIERS.find(t => t.id === task.tier);
-        const when = new Date(task.completedAt);
+      history.slice(0, 15).forEach(item => {
+        const when = new Date(item.timestamp);
         const timeAgo = getTimeAgo(when);
 
-        const item = document.createElement('div');
-        item.className = 'profile-activity-item';
-        item.innerHTML = `
-          <div class="profile-activity-icon completed">✅</div>
+        const el = document.createElement('div');
+        el.className = 'profile-activity-item';
+        el.innerHTML = `
+          <div class="profile-activity-icon completed">⚡</div>
           <div class="profile-activity-text">
-            <span>${escapeHTML(task.title)}</span>
-            <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">${tier ? tier.emoji : ''}</span>
+            <span class="activity-xp-gain">+${item.amount} XP</span>
+            <span class="activity-reason">${escapeHTML(item.reason)}</span>
+            ${item.multiplier > 1 ? `<span class="activity-mult">${item.multiplier}x</span>` : ''}
           </div>
           <div class="profile-activity-time">${timeAgo}</div>
         `;
-        activityContainer.appendChild(item);
+        activityContainer.appendChild(el);
       });
     }
   }
@@ -1952,17 +2006,33 @@ const FocusEngine = {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
     }
 
+    const durationMins = Math.round(this.totalSeconds / 60);
     const sessions = this.getSessions();
     const task = this.activeTaskId ? state.tasks.find(t => t.id === this.activeTaskId) : null;
     const newSession = {
       id: `fs_${Date.now()}`,
       taskId: this.activeTaskId,
       taskTitle: task ? task.title : 'General Deep Work Sprint',
-      durationMinutes: Math.round(this.totalSeconds / 60),
+      durationMinutes: durationMins,
       timestamp: new Date().toISOString()
     };
     sessions.push(newSession);
     localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(sessions));
+
+    // Award Gamified XP
+    if (typeof XPEngine !== 'undefined') {
+      let focusXP = durationMins; // Base 1 XP per minute
+      if (durationMins >= 90) focusXP = XP_VALUES.FOCUS_SESSION_90;
+      else if (durationMins >= 50) focusXP = XP_VALUES.FOCUS_SESSION_50;
+      else if (durationMins >= 25) focusXP = XP_VALUES.FOCUS_SESSION_25;
+
+      XPEngine.award(focusXP, `Deep Work Flow (${durationMins}m)`);
+      XPEngine.updateQuestProgress('focus_mins', durationMins);
+
+      // Evaluate focus badges
+      if (durationMins >= 90) XPEngine.awardBadge('flow_state');
+      else if (durationMins >= 25) XPEngine.awardBadge('deep_work_init');
+    }
 
     showToast('🎉 Focus session completed! Outstanding deep work.', 'success');
     this.reset();
