@@ -23,6 +23,7 @@ const Components = {
     const isCascade = page === 'cascade';
     const isAnalytics = page === 'analytics';
     const isRoadmap = page === 'roadmap';
+    const isBucketlist = page === 'bucketlist';
 
     const sidebarHTML = `
     <aside class="sidebar">
@@ -90,6 +91,10 @@ const Components = {
         <button class="nav-item ${isRoadmap ? 'active' : ''}" id="btn-view-roadmap" onclick="if(Components.getCurrentPage()!=='roadmap') window.location.href='roadmap.html';">
           <i data-lucide="calendar-range"></i>
           <span>Roadmap Timeline</span>
+        </button>
+        <button class="nav-item ${isBucketlist ? 'active' : ''}" id="btn-view-bucketlist" onclick="if(Components.getCurrentPage()!=='bucketlist') window.location.href='bucketlist.html';">
+          <i data-lucide="sparkles"></i>
+          <span>Life's Bucket List</span>
         </button>
         <button class="nav-item ${isAnalytics ? 'active' : ''}" id="btn-view-analytics" onclick="if(Components.getCurrentPage()!=='analytics') window.location.href='analytics.html';">
           <i data-lucide="bar-chart-3"></i>

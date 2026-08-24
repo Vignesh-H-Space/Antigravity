@@ -4386,6 +4386,539 @@ body {
   border-top: 1px solid var(--border-color);
 }
 
+/* ── Life's Bucket List Styles ────────────────────────────── */
+
+.bucketlist-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.bucketlist-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  flex-wrap: wrap;
+}
+
+.bucketlist-hero-left {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bucketlist-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.bucketlist-tag svg {
+  width: 14px;
+  height: 14px;
+}
+
+.bucketlist-hero-title {
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 4px 0 0 0;
+}
+
+.bucketlist-hero-desc {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.bucketlist-quote-card {
+  margin-top: 12px;
+  background: rgba(99, 102, 241, 0.04);
+  border-left: 3px solid #6366f1;
+  padding: 10px 16px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  position: relative;
+}
+
+.quote-symbol {
+  font-family: serif;
+  font-size: 1.8rem;
+  color: rgba(99, 102, 241, 0.4);
+  position: absolute;
+  top: -4px;
+  left: 6px;
+  line-height: 1;
+}
+
+.quote-text {
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+  padding-left: 14px;
+}
+
+.quote-author {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #818cf8;
+  padding-left: 14px;
+  display: block;
+}
+
+.bucketlist-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  align-self: center;
+  min-width: 240px;
+}
+
+.bl-stat-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bl-stat-val {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.bl-stat-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bl-stat-box.accent-emerald .bl-stat-val {
+  color: #10b981;
+}
+
+.bl-stat-box.accent-amber .bl-stat-val {
+  color: #f59e0b;
+}
+
+.bl-stat-box.accent-cyan .bl-stat-val {
+  color: #06b6d4;
+}
+
+/* Bucket List Toolbar */
+.bucketlist-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  flex-wrap: wrap;
+}
+
+.category-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.category-pill:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.category-pill.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.bucketlist-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-input);
+  padding: 3px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+}
+
+.status-filter-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.status-filter-btn:hover {
+  color: var(--text-primary);
+}
+
+.status-filter-btn.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Dream Cards Grid */
+.bucketlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.dream-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+  position: relative;
+}
+
+.dream-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dream-card-top-bar {
+  height: 3px;
+  width: 100%;
+  border-top: 3px solid #3b82f6;
+}
+
+.dream-card-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.dream-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dream-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dream-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dream-prio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dream-prio-dot.high {
+  background: #ef4444;
+}
+
+.dream-prio-dot.med {
+  background: #f59e0b;
+}
+
+.dream-status-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.dream-status-tag.dream {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+.dream-status-tag.in-progress {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.dream-status-tag.achieved {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+}
+
+.dream-status-tag:hover {
+  transform: scale(1.05);
+}
+
+.dream-content-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.dream-emoji-box {
+  font-size: 1.8rem;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dream-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dream-title {
+  font-family: var(--font-heading);
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.dream-title.strike {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.dream-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dream-notes-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-input);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.dream-notes-box svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.dream-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+.dream-target-date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.dream-target-date svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dream-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dream-achieve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dream-achieve-btn:hover {
+  background: #10b981;
+  color: #fff;
+}
+
+.dream-achieve-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dream-icon-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dream-icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+.dream-icon-btn.delete:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.dream-icon-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dream-card.achieved {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.bucketlist-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  gap: 8px;
+}
+
+.bucketlist-empty .empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 4px;
+}
+
+.bucketlist-empty h3 {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.bucketlist-empty p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  max-width: 400px;
+}
+
+
 
 
 
