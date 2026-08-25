@@ -287,30 +287,53 @@ const XPEngine = {
   /**
    * Daily Streak & Shield Protection Logic
    */
+  getLocalDate(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  },
+
+  getDaysDiff(dateStr1, dateStr2) {
+    if (!dateStr1 || !dateStr2) return 999;
+    const [y1, m1, d1] = dateStr1.split('-').map(Number);
+    const [y2, m2, d2] = dateStr2.split('-').map(Number);
+    const date1 = new Date(y1, m1 - 1, d1);
+    const date2 = new Date(y2, m2 - 1, d2);
+    const diffTime = date2.getTime() - date1.getTime();
+    return Math.round(diffTime / (1000 * 60 * 60 * 24));
+  },
+
+  /**
+   * Daily Streak & Shield Protection Logic
+   */
   checkStreak() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getLocalDate();
     const lastActive = this.data.lastActiveDate;
 
     if (!lastActive) {
-      this.data.streak = 1;
+      this.data.streak = Math.max(1, this.data.streak || 1);
       this.data.lastActiveDate = today;
       this.save();
+      this.syncAppState();
       return;
     }
 
-    if (lastActive === today) {
-      // Already active today
+    const diffDays = this.getDaysDiff(lastActive, today);
+
+    if (diffDays === 0) {
+      // Already recorded activity today — keep current streak
+      this.syncAppState();
       return;
     }
 
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    if (lastActive === yesterday) {
-      // Logged in next consecutive day
-      this.data.streak += 1;
+    if (diffDays === 1) {
+      // Consecutive day login / execution!
+      this.data.streak = (this.data.streak || 0) + 1;
       this.data.lastActiveDate = today;
       
       // Award daily login bonus
-      this.award(XP_VALUES.DAILY_LOGIN_BONUS, `Day ${this.data.streak} Daily Login Bonus`);
+      this.award(XP_VALUES.DAILY_LOGIN_BONUS, `Day ${this.data.streak} Daily Execution Bonus`);
 
       // Award 1 shield every 7 streak days (max 3)
       if (this.data.streak % 7 === 0) {
@@ -319,10 +342,8 @@ const XPEngine = {
           showToast(`🛡️ Streak Shield Earned! (Total: ${this.data.streakShields})`, 'success');
         }
       }
-    } else {
-      // Missed at least 1 day
-      const diffDays = Math.floor((new Date(today) - new Date(lastActive)) / 86400000);
-      
+    } else if (diffDays > 1) {
+      // Missed day(s)
       if (this.data.streakShields > 0) {
         // Shield absorbs the break!
         this.data.streakShields -= 1;
@@ -343,6 +364,30 @@ const XPEngine = {
     }
 
     this.save();
+    this.syncAppState();
+  },
+
+  syncAppState() {
+    if (typeof state !== 'undefined') {
+      state.streak = {
+        count: this.data.streak || 1,
+        lastDate: this.data.lastActiveDate
+      };
+      localStorage.setItem('tesseract_streak', JSON.stringify(state.streak));
+    }
+  },
+
+  setManualStreak(newCount) {
+    const count = parseInt(newCount, 10);
+    if (isNaN(count) || count < 0) return;
+    this.data.streak = count;
+    this.data.lastActiveDate = this.getLocalDate();
+    this.save();
+    this.syncAppState();
+    this.updateUI();
+    if (typeof renderStreakUI === 'function') renderStreakUI();
+    if (typeof renderAll === 'function') renderAll();
+    if (typeof showToast === 'function') showToast(`🔥 Streak set to ${count} Days!`, 'success');
   },
 
   /**
