@@ -499,6 +499,33 @@ const Components = {
       </div>
     </div>
 
+    <!-- 🌐 Strategic Alignment Linker Modal -->
+    <div class="modal-backdrop" id="link-parent-modal" style="display: none;">
+      <div class="ritual-modal-card parent-linker-card">
+        <div class="ritual-modal-header">
+          <div class="ritual-header-icon">🌐</div>
+          <div>
+            <h3 class="ritual-modal-title">Bridge to Strategic North Star</h3>
+            <p class="ritual-modal-sub">Link this task to an Annual Vision, Quarterly Objective, or Milestone.</p>
+          </div>
+          <button class="modal-close-btn" onclick="AlignmentEngine.closeModal();">&times;</button>
+        </div>
+        <div class="ritual-modal-body">
+          <div class="target-task-preview-box">
+            <span class="target-task-tier-tag" id="link-modal-target-tier">DAILY GOAL</span>
+            <h4 class="target-task-name" id="link-modal-target-title">Task Title</h4>
+          </div>
+
+          <div class="parent-picker-container" id="link-modal-parent-list">
+            <!-- Injected by AlignmentEngine.openLinkModal() -->
+          </div>
+        </div>
+        <div class="ritual-modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AlignmentEngine.closeModal();">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Floating XP Burst Animation Container -->
     <div class="xp-burst-container" id="xp-burst-container"></div>
 
