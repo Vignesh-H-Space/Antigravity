@@ -181,6 +181,10 @@ const HabitsEngine = {
       if (typeof showToast === 'function') {
         showToast(`Habit Completed: "${habit.title}" 🔥`, 'success');
       }
+
+      if (typeof checkAndUpdateStreak === 'function') {
+        checkAndUpdateStreak();
+      }
     }
 
     this.renderWidget();

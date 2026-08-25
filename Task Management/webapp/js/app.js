@@ -132,77 +132,123 @@ function saveProfile() {
 
 // ── Streak Engine ──────────────────────────────────────────
 function getToday() {
-  return new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getDaysBetween(dateStr1, dateStr2) {
+  if (!dateStr1 || !dateStr2) return 999;
+  const [y1, m1, d1] = dateStr1.split('-').map(Number);
+  const [y2, m2, d2] = dateStr2.split('-').map(Number);
+  const date1 = new Date(y1, m1 - 1, d1);
+  const date2 = new Date(y2, m2 - 1, d2);
+  const diffTime = date2.getTime() - date1.getTime();
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
 }
 
 function loadStreak() {
+  if (typeof XPEngine !== 'undefined' && XPEngine.data) {
+    state.streak = {
+      count: XPEngine.data.streak || 1,
+      lastDate: XPEngine.data.lastActiveDate || getToday()
+    };
+    return;
+  }
+
   const saved = localStorage.getItem(STREAK_KEY);
   if (saved) {
     try {
       state.streak = JSON.parse(saved);
     } catch (e) {
-      state.streak = { count: 0, lastDate: null };
+      state.streak = { count: 1, lastDate: getToday() };
     }
   } else {
-    // Derive initial streak from existing completed daily tasks
-    deriveInitialStreak();
+    state.streak = { count: 1, lastDate: getToday() };
+    saveStreak();
   }
 }
 
 function saveStreak() {
   localStorage.setItem(STREAK_KEY, JSON.stringify(state.streak));
-}
-
-function deriveInitialStreak() {
-  const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
-  const allDailyDone = dailyTasks.length > 0 && dailyTasks.every(t => t.completed);
-  if (allDailyDone) {
-    state.streak = { count: 1, lastDate: getToday() };
-  } else {
-    state.streak = { count: 0, lastDate: null };
+  if (typeof XPEngine !== 'undefined' && XPEngine.data) {
+    XPEngine.data.streak = state.streak.count;
+    XPEngine.data.lastActiveDate = state.streak.lastDate;
+    XPEngine.save();
   }
-  saveStreak();
 }
 
 function checkAndUpdateStreak() {
   const today = getToday();
-  const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
-  if (dailyTasks.length === 0) return;
+  if (!state.streak) state.streak = { count: 1, lastDate: null };
 
-  const allDailyDone = dailyTasks.every(t => t.completed);
+  const lastDate = state.streak.lastDate;
+  const diffDays = getDaysBetween(lastDate, today);
 
-  if (allDailyDone) {
-    if (state.streak.lastDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      if (state.streak.lastDate === yesterday) {
-        state.streak.count += 1;
-      } else {
-        state.streak.count = 1;
-      }
+  if (diffDays === 0) {
+    // Already logged for today, streak is active
+    return;
+  }
+
+  if (diffDays === 1) {
+    // Consecutive day execution!
+    state.streak.count = (state.streak.count || 0) + 1;
+    state.streak.lastDate = today;
+    saveStreak();
+    triggerConfetti();
+    showToast(`🔥 Daily Streak Advanced! You're on a ${state.streak.count}-day streak!`, 'success');
+    renderStreakUI();
+  } else if (diffDays > 1) {
+    // Missed day(s)
+    if (typeof XPEngine !== 'undefined' && XPEngine.data && XPEngine.data.streakShields > 0) {
+      XPEngine.data.streakShields -= 1;
       state.streak.lastDate = today;
       saveStreak();
-      triggerConfetti();
-      showToast(`🔥 Daily Streak updated! You're on a ${state.streak.count}-day streak!`, 'success');
-      renderStreakUI();
-    }
-  } else {
-    if (state.streak.lastDate === today) {
-      state.streak.count = Math.max(0, state.streak.count - 1);
-      state.streak.lastDate = null;
+      showToast(`🛡️ Streak Shield Saved Your ${state.streak.count}-Day Streak! (${XPEngine.data.streakShields} shield left)`, 'warning');
+    } else {
+      state.streak.count = 1;
+      state.streak.lastDate = today;
       saveStreak();
-      renderStreakUI();
+      showToast(`🔥 Day 1 of your new execution streak! Rebuild your momentum.`, 'info');
+    }
+    renderStreakUI();
+  }
+}
+
+function promptEditStreak() {
+  const current = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.streak : (state.streak ? state.streak.count : 1);
+  const input = prompt('🔥 Set your current Execution Streak (Days):', current);
+  if (input !== null) {
+    const num = parseInt(input.trim(), 10);
+    if (!isNaN(num) && num >= 0) {
+      if (typeof XPEngine !== 'undefined' && typeof XPEngine.setManualStreak === 'function') {
+        XPEngine.setManualStreak(num);
+      } else {
+        state.streak = { count: num, lastDate: getToday() };
+        saveStreak();
+        renderStreakUI();
+        if (typeof renderAll === 'function') renderAll();
+        showToast(`🔥 Streak updated to ${num} Days!`, 'success');
+      }
     }
   }
 }
 
 function renderStreakUI() {
-  const count = state.streak ? state.streak.count : 0;
+  const count = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.streak : (state.streak ? state.streak.count : 1);
   const counterEl = document.getElementById('streak-counter');
   const fillEl = document.getElementById('streak-fill');
   const labelEl = document.getElementById('streak-badge-label');
   const badgeContainer = document.getElementById('streak-badges');
 
-  if (counterEl) counterEl.textContent = `${count} Day${count !== 1 ? 's' : ''}`;
+  if (counterEl) {
+    counterEl.textContent = `${count} Day${count !== 1 ? 's' : ''}`;
+    counterEl.title = 'Click to customize/adjust your streak';
+    counterEl.style.cursor = 'pointer';
+    counterEl.onclick = promptEditStreak;
+  }
 
   let nextBadge = STREAK_BADGES.find(b => b.days > count) || STREAK_BADGES[STREAK_BADGES.length - 1];
   let prevDays = 0;
@@ -497,13 +543,9 @@ function toggleTaskCompletion(taskId, clickEvent = null) {
     }
 
     showToast(`Completed: "${task.title}" 🎉`, 'success');
+    checkAndUpdateStreak();
   } else {
     showToast(`Reopened: "${task.title}"`, 'info');
-  }
-
-  // Update streak after any daily task toggle
-  if (task.tier === 'daily') {
-    checkAndUpdateStreak();
   }
 
   renderAll();
@@ -1420,7 +1462,8 @@ function renderProfileView() {
   if (!profileContainer) return;
 
   const tasks = state.tasks;
-  const streak = state.streak || { count: 0, lastDate: null };
+  const streakCount = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.streak : (state.streak ? state.streak.count : 1);
+  const streak = { count: streakCount, lastDate: (state.streak ? state.streak.lastDate : null) };
   const profile = state.profile || { name: 'Tesseract User', image: null };
   const completed = tasks.filter(t => t.completed);
   const total = tasks.length;
@@ -1486,27 +1529,34 @@ function renderProfileView() {
     if (lvlBadge) lvlBadge.textContent = `Lvl ${prog.level}`;
     if (rankTitle) rankTitle.textContent = prog.title;
     const currentThreshold = LEVEL_THRESHOLDS.find(t => t.level === prog.level);
-    if (rankDesc && currentThreshold) rankDesc.textContent = currentThreshold.desc;
-    if (totalXP) totalXP.textContent = `${prog.totalXP.toLocaleString()} XP`;
+    if (rankDesc && currentThreshold) rankDesc.textContent = currentThreshold.tierName;
+    if (totalXP) totalXP.textContent = `${XPEngine.data.totalXP} XP`;
     if (multPill) {
       const mult = XPEngine.getStreakMultiplier();
-      multPill.textContent = `${mult}x Streak Multiplier 🔥`;
+      multPill.textContent = `${mult}x Multiplier`;
+      multPill.className = `profile-multiplier-badge ${mult > 1 ? 'active' : ''}`;
     }
-    if (xpInLevel) xpInLevel.textContent = `${prog.xpInCurrentLevel.toLocaleString()} / ${prog.xpNeededForNext.toLocaleString()} XP (${prog.remainingXP.toLocaleString()} XP to level up)`;
-    if (nextRank) nextRank.textContent = `Next: ${prog.nextTitle}`;
-    if (xpFill) xpFill.style.width = `${prog.percent}%`;
+    if (xpInLevel) xpInLevel.textContent = `${prog.currentXPInLevel} / ${prog.xpForNextLevel} XP`;
+    if (nextRank) nextRank.textContent = `Next: Level ${prog.level + 1} (${prog.remainingXP} XP left)`;
+    if (xpFill) xpFill.style.width = `${prog.pct}%`;
   }
 
-  // Stats cards
-  const elTotal = document.getElementById('pstat-total-tasks');
-  const elCompleted = document.getElementById('pstat-completed');
+  // Update stat cards
+  const elTotal = document.getElementById('pstat-total-goals');
+  const elCompleted = document.getElementById('pstat-completed-goals');
   const elRate = document.getElementById('pstat-completion-rate');
-  const elStreak = document.getElementById('pstat-streak');
-  const elShields = document.getElementById('pstat-shields');
+  const elStreak = document.getElementById('pstat-streak-days');
+  const elShields = document.getElementById('pstat-streak-shields');
+
   if (elTotal) elTotal.textContent = total;
   if (elCompleted) elCompleted.textContent = completed.length;
   if (elRate) elRate.textContent = `${rate}%`;
-  if (elStreak) elStreak.textContent = (typeof XPEngine !== 'undefined') ? XPEngine.data.streak : streak.count;
+  if (elStreak) {
+    elStreak.textContent = streak.count;
+    elStreak.style.cursor = 'pointer';
+    elStreak.title = 'Click to customize/adjust your streak';
+    elStreak.onclick = promptEditStreak;
+  }
   if (elShields) elShields.textContent = `${(typeof XPEngine !== 'undefined') ? (XPEngine.data.streakShields || 0) : 0} 🛡️`;
 
   const elDeepWork = document.getElementById('pstat-deep-work');
