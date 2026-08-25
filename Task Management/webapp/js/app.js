@@ -597,6 +597,10 @@ function renderAll() {
     XPEngine.updateUI();
   }
 
+  if (typeof AlignmentEngine !== 'undefined') {
+    AlignmentEngine.renderAlignmentUI();
+  }
+
   lucide.createIcons();
 }
 
@@ -873,7 +877,28 @@ function createTaskCardElement(task) {
   card.setAttribute('data-id', task.id);
 
   const parentTask = task.parentId ? state.tasks.find(p => p.id === task.parentId) : null;
-  const parentBadge = parentTask ? `<span class="meta-pill cascade-pill" title="Cascades up to: ${parentTask.title}"><i data-lucide="arrow-up-right"></i> ${parentTask.title.substring(0, 24)}...</span>` : '';
+  const isOrphan = task.tier !== 'annual' && !parentTask && !task.completed;
+  
+  let parentBadge = '';
+  if (parentTask) {
+    parentBadge = `<span class="meta-pill cascade-pill" title="Cascades up to: ${escapeHTML(parentTask.title)}" onclick="if(typeof AlignmentEngine!=='undefined') AlignmentEngine.openLinkModal('${task.id}', event);"><i data-lucide="arrow-up-right"></i> ${escapeHTML(parentTask.title.substring(0, 24))}...</span>`;
+  }
+
+  let orphanAlertHTML = '';
+  if (isOrphan) {
+    orphanAlertHTML = `
+      <div class="orphan-task-alert">
+        <div class="orphan-alert-text">
+          <i data-lucide="alert-triangle"></i>
+          <span>Tactical Busywork Alert: Unlinked to any higher horizon</span>
+        </div>
+        <button class="btn-link-parent" onclick="if(typeof AlignmentEngine!=='undefined') AlignmentEngine.openLinkModal('${task.id}', event);" title="Connect to an Annual Vision or Quarterly Objective">
+          <i data-lucide="link"></i>
+          <span>Link Parent Goal</span>
+        </button>
+      </div>
+    `;
+  }
 
   const subtasks = task.subtasks || [];
   const totalSubtasks = subtasks.length;
@@ -939,6 +964,8 @@ function createTaskCardElement(task) {
         ${parentBadge}
         ${(task.tags || []).map(tg => `<span class="tag-pill">#${escapeHTML(tg)}</span>`).join(' ')}
       </div>
+
+      ${orphanAlertHTML}
 
       ${subtasksHTML}
     </div>
