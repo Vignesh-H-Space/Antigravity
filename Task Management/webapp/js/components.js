@@ -26,9 +26,10 @@ const Components = {
     const isBucketlist = page === 'bucketlist';
 
     const sidebarHTML = `
-    <aside class="sidebar">
-      <div class="brand-container" style="cursor: pointer;" onclick="window.location.href='index.html'">
-        <div class="brand-logo">
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="Components.closeMobileSidebar()"></div>
+    <aside class="sidebar" id="app-sidebar">
+      <div class="brand-container">
+        <div class="brand-logo" style="cursor: pointer;" onclick="window.location.href='index.html'">
           <div class="brand-icon-mesh">
             <i data-lucide="box" class="brand-svg"></i>
           </div>
@@ -37,41 +38,44 @@ const Components = {
             <span class="brand-subtitle">Multi-Horizon Matrix</span>
           </div>
         </div>
+        <button class="sidebar-close-btn" id="sidebar-close-btn" onclick="Components.closeMobileSidebar()" aria-label="Close Navigation">
+          <i data-lucide="x"></i>
+        </button>
       </div>
 
       <div class="sidebar-section-title">TIME HORIZONS</div>
       <nav class="nav-menu">
-        <button class="nav-item ${isHome && activeHorizon === 'general' ? 'active' : ''}" data-horizon="general" id="tab-general">
+        <button class="nav-item ${isHome && activeHorizon === 'general' ? 'active' : ''}" data-horizon="general" id="tab-general" onclick="Components.closeMobileSidebar()">
           <i data-lucide="home"></i>
           <span>Home</span>
           <span class="badge" id="badge-general">0</span>
         </button>
-        <button class="nav-item ${isHome && activeHorizon === 'daily' ? 'active' : ''}" data-horizon="daily" id="tab-daily">
+        <button class="nav-item ${isHome && activeHorizon === 'daily' ? 'active' : ''}" data-horizon="daily" id="tab-daily" onclick="Components.closeMobileSidebar()">
           <span class="nav-emoji">🌅</span>
           <span>Daily Tasks</span>
           <span class="badge" id="badge-daily">0</span>
         </button>
-        <button class="nav-item ${isHome && activeHorizon === 'weekly' ? 'active' : ''}" data-horizon="weekly" id="tab-weekly">
+        <button class="nav-item ${isHome && activeHorizon === 'weekly' ? 'active' : ''}" data-horizon="weekly" id="tab-weekly" onclick="Components.closeMobileSidebar()">
           <span class="nav-emoji">📅</span>
           <span>Weekly Milestones</span>
           <span class="badge" id="badge-weekly">0</span>
         </button>
-        <button class="nav-item ${isHome && activeHorizon === 'monthly' ? 'active' : ''}" data-horizon="monthly" id="tab-monthly">
+        <button class="nav-item ${isHome && activeHorizon === 'monthly' ? 'active' : ''}" data-horizon="monthly" id="tab-monthly" onclick="Components.closeMobileSidebar()">
           <span class="nav-emoji">🗓️</span>
           <span>Monthly Goals</span>
           <span class="badge" id="badge-monthly">0</span>
         </button>
-        <button class="nav-item ${isHome && activeHorizon === 'quarterly' ? 'active' : ''}" data-horizon="quarterly" id="tab-quarterly">
+        <button class="nav-item ${isHome && activeHorizon === 'quarterly' ? 'active' : ''}" data-horizon="quarterly" id="tab-quarterly" onclick="Components.closeMobileSidebar()">
           <span class="nav-emoji">🎯</span>
           <span>Quarterly Goals</span>
           <span class="badge" id="badge-quarterly">0</span>
         </button>
-        <button class="nav-item ${isHome && activeHorizon === 'annual' ? 'active' : ''}" data-horizon="annual" id="tab-annual">
+        <button class="nav-item ${isHome && activeHorizon === 'annual' ? 'active' : ''}" data-horizon="annual" id="tab-annual" onclick="Components.closeMobileSidebar()">
           <span class="nav-emoji">🏆</span>
           <span>Annual Vision</span>
           <span class="badge" id="badge-annual">0</span>
         </button>
-        <button class="nav-item ${isHome && activeHorizon === 'all' ? 'active' : ''}" data-horizon="all" id="tab-all">
+        <button class="nav-item ${isHome && activeHorizon === 'all' ? 'active' : ''}" data-horizon="all" id="tab-all" onclick="Components.closeMobileSidebar()">
           <i data-lucide="layers"></i>
           <span>All 5 Horizons</span>
           <span class="badge" id="badge-all">0</span>
@@ -80,23 +84,23 @@ const Components = {
 
       <div class="sidebar-section-title">VIEWS & TOOLS</div>
       <nav class="nav-menu secondary">
-        <button class="nav-item" id="btn-sidebar-focus" onclick="FocusEngine.open();" title="Start Focus Mode Session">
+        <button class="nav-item" id="btn-sidebar-focus" onclick="Components.closeMobileSidebar(); FocusEngine.open();" title="Start Focus Mode Session">
           <i data-lucide="zap"></i>
           <span>Focus Mode</span>
         </button>
-        <button class="nav-item ${isCascade ? 'active' : ''}" id="btn-view-cascade" onclick="if(Components.getCurrentPage()!=='cascade') window.location.href='cascade.html';">
+        <button class="nav-item ${isCascade ? 'active' : ''}" id="btn-view-cascade" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='cascade') window.location.href='cascade.html';">
           <i data-lucide="git-merge"></i>
           <span>Goal Cascade Tree</span>
         </button>
-        <button class="nav-item ${isRoadmap ? 'active' : ''}" id="btn-view-roadmap" onclick="if(Components.getCurrentPage()!=='roadmap') window.location.href='roadmap.html';">
+        <button class="nav-item ${isRoadmap ? 'active' : ''}" id="btn-view-roadmap" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='roadmap') window.location.href='roadmap.html';">
           <i data-lucide="calendar-range"></i>
           <span>Roadmap Timeline</span>
         </button>
-        <button class="nav-item ${isBucketlist ? 'active' : ''}" id="btn-view-bucketlist" onclick="if(Components.getCurrentPage()!=='bucketlist') window.location.href='bucketlist.html';">
+        <button class="nav-item ${isBucketlist ? 'active' : ''}" id="btn-view-bucketlist" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='bucketlist') window.location.href='bucketlist.html';">
           <i data-lucide="sparkles"></i>
           <span>Life's Bucket List</span>
         </button>
-        <button class="nav-item ${isAnalytics ? 'active' : ''}" id="btn-view-analytics" onclick="if(Components.getCurrentPage()!=='analytics') window.location.href='analytics.html';">
+        <button class="nav-item ${isAnalytics ? 'active' : ''}" id="btn-view-analytics" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='analytics') window.location.href='analytics.html';">
           <i data-lucide="bar-chart-3"></i>
           <span>Productivity Metrics</span>
         </button>
@@ -150,14 +154,49 @@ const Components = {
   },
 
   /**
+   * Toggle mobile navigation drawer
+   */
+  toggleMobileSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.toggle('mobile-open');
+    if (backdrop) {
+      backdrop.classList.toggle('active', isOpen);
+    }
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  },
+
+  /**
+   * Close mobile navigation drawer
+   */
+  closeMobileSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
+  },
+
+  /**
    * Render Top Header into #header-mount or main-content
    */
   renderHeader({ title = 'All Goals & Tasks', subtitle = 'Holistic overview across all 5 strategic horizons.', showSearch = true } = {}) {
     const headerHTML = `
     <header class="top-header">
       <div class="header-left">
-        <h2 class="view-title" id="current-view-heading">${title}</h2>
-        <p class="view-subtitle" id="current-view-desc">${subtitle}</p>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="Components.toggleMobileSidebar()" aria-label="Open Menu">
+          <i data-lucide="menu"></i>
+        </button>
+        <div>
+          <h2 class="view-title" id="current-view-heading">${title}</h2>
+          <p class="view-subtitle" id="current-view-desc">${subtitle}</p>
+        </div>
       </div>
       <div class="header-right">
         ${showSearch ? `
@@ -175,11 +214,11 @@ const Components = {
           <span class="header-multiplier-tag" id="header-multiplier-badge" style="display:none;">1.2x 🔥</span>
         </div>
 
-        <button class="btn btn-secondary" id="btn-header-focus" title="Open Focus Mode">
+        <button class="btn btn-secondary btn-header-focus-btn" id="btn-header-focus" title="Open Focus Mode">
           <i data-lucide="zap"></i>
           <span>Focus Mode</span>
         </button>
-        <button class="btn btn-primary" id="btn-open-add-modal">
+        <button class="btn btn-primary btn-header-add-btn" id="btn-open-add-modal">
           <i data-lucide="plus"></i>
           <span>Add Goal / Task</span>
         </button>
