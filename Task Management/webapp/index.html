@@ -196,6 +196,26 @@
         </div>
       </section>
 
+      <!-- View Mode Switcher -->
+      <div class="view-mode-switcher">
+        <span class="view-mode-label">View:</span>
+        <div class="segmented-control view-mode-control">
+          <button class="segment active" id="view-mode-list" onclick="toggleViewMode()" title="Standard List View">
+            <i data-lucide="list"></i>
+            <span>List</span>
+          </button>
+          <button class="segment" id="view-mode-matrix" onclick="toggleViewMode()" title="Eisenhower Matrix">
+            <i data-lucide="layout-grid"></i>
+            <span>Matrix</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Eisenhower Matrix Container (hidden by default) -->
+      <section class="eisenhower-matrix" id="eisenhower-matrix-container" style="display: none;">
+        <!-- Rendered by renderEisenhowerMatrix() -->
+      </section>
+
       <!-- Filter Controls Bar -->
       <div class="filter-bar">
         <div class="filter-group">
