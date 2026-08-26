@@ -200,10 +200,11 @@ const Components = {
       </div>
       <div class="header-right">
         ${showSearch ? `
-        <div class="search-box">
+        <div class="search-box" id="search-box-wrapper">
           <i data-lucide="search" class="search-icon"></i>
-          <input type="text" id="search-input" placeholder="Search tasks, tags, categories... (Press /)" />
-          <button class="clear-search" id="clear-search" style="display:none;">&times;</button>
+          <input type="text" id="search-input" placeholder="Search tasks, tags, categories... (Press /)" autocomplete="off" />
+          <button class="clear-search" id="clear-search" style="display:none;" aria-label="Clear search">&times;</button>
+          <div class="search-suggestions-panel" id="search-suggestions" style="display:none;"></div>
         </div>
         ` : ''}
         
