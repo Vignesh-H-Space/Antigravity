@@ -251,6 +251,14 @@ function renderStreakUI() {
     counterEl.onclick = promptEditStreak;
   }
 
+  const pstatStreak = document.getElementById('pstat-streak') || document.getElementById('pstat-streak-days');
+  if (pstatStreak) {
+    pstatStreak.textContent = `${count} 🔥`;
+    pstatStreak.style.cursor = 'pointer';
+    pstatStreak.title = 'Click to customize/adjust your streak';
+    pstatStreak.onclick = promptEditStreak;
+  }
+
   let nextBadge = STREAK_BADGES.find(b => b.days > count) || STREAK_BADGES[STREAK_BADGES.length - 1];
   let prevDays = 0;
   const currBadgeIndex = STREAK_BADGES.findIndex(b => b.days > count);
@@ -913,7 +921,7 @@ function renderHomeCommandHero() {
   const dailyTasks = state.tasks.filter(t => t.tier === 'daily');
   const dailyCompleted = dailyTasks.filter(t => t.completed).length;
   const urgentCount = state.tasks.filter(t => t.priority === 'urgent' && !t.completed).length;
-  const streakCount = state.streak ? state.streak.count : 0;
+  const streakCount = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.streak : (state.streak ? state.streak.count : 1);
 
   const metricDaily = document.getElementById('metric-daily-ratio');
   const metricStreak = document.getElementById('metric-streak-count');
@@ -1944,17 +1952,17 @@ function renderProfileView() {
   }
 
   // Update stat cards
-  const elTotal = document.getElementById('pstat-total-goals');
-  const elCompleted = document.getElementById('pstat-completed-goals');
+  const elTotal = document.getElementById('pstat-total-tasks') || document.getElementById('pstat-total-goals');
+  const elCompleted = document.getElementById('pstat-completed') || document.getElementById('pstat-completed-goals');
   const elRate = document.getElementById('pstat-completion-rate');
-  const elStreak = document.getElementById('pstat-streak-days');
-  const elShields = document.getElementById('pstat-streak-shields');
+  const elStreak = document.getElementById('pstat-streak') || document.getElementById('pstat-streak-days');
+  const elShields = document.getElementById('pstat-shields') || document.getElementById('pstat-streak-shields');
 
   if (elTotal) elTotal.textContent = total;
   if (elCompleted) elCompleted.textContent = completed.length;
   if (elRate) elRate.textContent = `${rate}%`;
   if (elStreak) {
-    elStreak.textContent = streak.count;
+    elStreak.textContent = `${streak.count} 🔥`;
     elStreak.style.cursor = 'pointer';
     elStreak.title = 'Click to customize/adjust your streak';
     elStreak.onclick = promptEditStreak;
