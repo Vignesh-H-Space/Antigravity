@@ -379,38 +379,28 @@ function bindEvents() {
     });
   }
 
-  // Search
-  const searchInput = document.getElementById('search-input');
-  const clearSearchBtn = document.getElementById('clear-search');
-  if (searchInput && clearSearchBtn) {
-    searchInput.addEventListener('input', (e) => {
-      state.searchQuery = e.target.value.trim().toLowerCase();
-      clearSearchBtn.style.display = state.searchQuery ? 'block' : 'none';
-      renderTaskList();
-    });
+  // Omni-Search Autocomplete & Global Search Controller
+  initSearchController();
 
-    clearSearchBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      state.searchQuery = '';
-      clearSearchBtn.style.display = 'none';
-      renderTaskList();
-      searchInput.focus();
-    });
-  }
-
-  // Keyboard shortcut '/' to search & 'N' for new task
+  // Global Keyboard Shortcuts ('/' to search & 'N' for new task)
   window.addEventListener('keydown', (e) => {
+    const searchInput = document.getElementById('search-input');
     const taskModal = document.getElementById('task-modal');
     if (e.key === '/' && searchInput && document.activeElement !== searchInput && (!taskModal || taskModal.style.display === 'none')) {
       e.preventDefault();
       searchInput.focus();
+      searchInput.select();
     }
     if ((e.key === 'n' || e.key === 'N') && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && (!taskModal || taskModal.style.display === 'none')) {
       e.preventDefault();
       openAddModal();
     }
-    if (e.key === 'Escape' && taskModal && taskModal.style.display !== 'none') {
-      closeModal();
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('search-suggestions');
+      if (panel) panel.style.display = 'none';
+      if (taskModal && taskModal.style.display !== 'none') {
+        closeModal();
+      }
     }
   });
 
@@ -499,6 +489,246 @@ function bindEvents() {
         handleAdd();
       }
     });
+  }
+}
+
+// ── Omni-Search Autocomplete Controller ────────────────────────
+function initSearchController() {
+  const searchInput = document.getElementById('search-input');
+  const clearSearchBtn = document.getElementById('clear-search');
+  const suggestionsPanel = document.getElementById('search-suggestions');
+  if (!searchInput) return;
+
+  let activeIndex = -1;
+
+  function highlightMatch(text, query) {
+    if (!text) return '';
+    if (!query) return escapeHTML(text);
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return escapeHTML(text).replace(regex, '<mark>$1</mark>');
+  }
+
+  function getSuggestions(query) {
+    if (!query) return { tasks: [], dreams: [] };
+    const q = query.toLowerCase();
+
+    // 1. Task matches across active state
+    const taskMatches = (state.tasks || []).filter(t => {
+      const matchTitle = (t.title || '').toLowerCase().includes(q);
+      const matchDesc = (t.description || '').toLowerCase().includes(q);
+      const matchCat = (t.category || '').toLowerCase().includes(q);
+      const matchTier = (t.tier || '').toLowerCase().includes(q);
+      const matchTags = (t.tags || []).some(tg => tg.toLowerCase().includes(q));
+      return matchTitle || matchDesc || matchCat || matchTier || matchTags;
+    }).slice(0, 6);
+
+    // 2. Bucket list dreams matches
+    let dreamMatches = [];
+    try {
+      const rawDreams = localStorage.getItem('tesseract_bucketlist_data');
+      if (rawDreams) {
+        const dreams = JSON.parse(rawDreams);
+        dreamMatches = (dreams || []).filter(d => {
+          const matchTitle = (d.title || '').toLowerCase().includes(q);
+          const matchDesc = (d.description || '').toLowerCase().includes(q);
+          const matchCat = (d.category || '').toLowerCase().includes(q);
+          return matchTitle || matchDesc || matchCat;
+        }).slice(0, 3);
+      }
+    } catch (e) {}
+
+    return { tasks: taskMatches, dreams: dreamMatches };
+  }
+
+  function renderSuggestions(query) {
+    if (!suggestionsPanel) return;
+    activeIndex = -1;
+
+    if (!query || query.length === 0) {
+      suggestionsPanel.style.display = 'none';
+      suggestionsPanel.innerHTML = '';
+      return;
+    }
+
+    const { tasks, dreams } = getSuggestions(query);
+    const totalCount = tasks.length + dreams.length;
+
+    if (totalCount === 0) {
+      suggestionsPanel.innerHTML = `
+        <div class="search-suggestion-empty">
+          No matches found for "<strong>${escapeHTML(query)}</strong>"
+        </div>
+      `;
+      suggestionsPanel.style.display = 'block';
+      return;
+    }
+
+    let html = '';
+
+    if (tasks.length > 0) {
+      html += `<div class="search-suggestion-header">Tasks & Goals (${tasks.length})</div>`;
+      tasks.forEach((t, idx) => {
+        const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: '📌', name: 'Task', color: '#6366f1' };
+        html += `
+          <div class="search-suggestion-item" data-type="task" data-id="${t.id}" data-index="${idx}" onclick="selectSearchTask('${t.id}')">
+            <div class="search-suggestion-left">
+              <span class="search-suggestion-emoji">${tierObj.emoji}</span>
+              <div class="search-suggestion-title-box">
+                <div class="search-suggestion-title">${highlightMatch(t.title, query)}</div>
+                <div class="search-suggestion-sub">
+                  <span style="color:${tierObj.color}">${tierObj.name}</span>
+                  ${t.category ? ` • #${escapeHTML(t.category)}` : ''}
+                  ${t.completed ? ' • <span style="color:#10b981;">✓ Completed</span>' : ''}
+                </div>
+              </div>
+            </div>
+            <div class="search-suggestion-right">
+              <span class="search-suggestion-pill em-prio-${t.priority}">${t.priority}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    if (dreams.length > 0) {
+      html += `<div class="search-suggestion-header" style="margin-top:4px;">Bucket List Dreams (${dreams.length})</div>`;
+      dreams.forEach((d, idx) => {
+        const totalIdx = tasks.length + idx;
+        html += `
+          <div class="search-suggestion-item" data-type="dream" data-id="${d.id}" data-index="${totalIdx}" onclick="selectSearchDream('${d.id}')">
+            <div class="search-suggestion-left">
+              <span class="search-suggestion-emoji">${d.emoji || '🪣'}</span>
+              <div class="search-suggestion-title-box">
+                <div class="search-suggestion-title">${highlightMatch(d.title, query)}</div>
+                <div class="search-suggestion-sub">
+                  <span style="color:#f43f5e;">Life's Bucket List</span>
+                  ${d.category ? ` • ${escapeHTML(d.category)}` : ''}
+                </div>
+              </div>
+            </div>
+            <div class="search-suggestion-right">
+              <span class="search-suggestion-pill" style="background:rgba(244,63,94,0.15); color:#f43f5e;">${d.status || 'DREAM'}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    suggestionsPanel.innerHTML = html;
+    suggestionsPanel.style.display = 'block';
+  }
+
+  // Real-time input handler
+  searchInput.addEventListener('input', (e) => {
+    const rawVal = e.target.value;
+    state.searchQuery = rawVal.trim().toLowerCase();
+    if (clearSearchBtn) clearSearchBtn.style.display = rawVal ? 'flex' : 'none';
+
+    renderSuggestions(state.searchQuery);
+
+    const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+    if (page === 'index') {
+      if (state.viewMode === 'eisenhower') {
+        renderEisenhowerMatrix();
+      } else {
+        renderTaskList();
+      }
+    }
+  });
+
+  // Focus event to reopen suggestions if query exists
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim()) {
+      renderSuggestions(searchInput.value.trim().toLowerCase());
+    }
+  });
+
+  // Keyboard navigation within suggestions
+  searchInput.addEventListener('keydown', (e) => {
+    if (!suggestionsPanel || suggestionsPanel.style.display === 'none') return;
+    const items = suggestionsPanel.querySelectorAll('.search-suggestion-item');
+    if (items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = (activeIndex + 1) % items.length;
+      updateActiveItem(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = (activeIndex - 1 + items.length) % items.length;
+      updateActiveItem(items);
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && items[activeIndex]) {
+        e.preventDefault();
+        items[activeIndex].click();
+      } else {
+        suggestionsPanel.style.display = 'none';
+      }
+    }
+  });
+
+  function updateActiveItem(items) {
+    items.forEach((it, idx) => {
+      it.classList.toggle('active', idx === activeIndex);
+      if (idx === activeIndex) {
+        it.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
+  // Clear search button
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      state.searchQuery = '';
+      clearSearchBtn.style.display = 'none';
+      if (suggestionsPanel) {
+        suggestionsPanel.style.display = 'none';
+        suggestionsPanel.innerHTML = '';
+      }
+      const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+      if (page === 'index') {
+        if (state.viewMode === 'eisenhower') {
+          renderEisenhowerMatrix();
+        } else {
+          renderTaskList();
+        }
+      }
+      searchInput.focus();
+    });
+  }
+
+  // Click outside to dismiss
+  document.addEventListener('click', (e) => {
+    const wrapper = document.getElementById('search-box-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      if (suggestionsPanel) suggestionsPanel.style.display = 'none';
+    }
+  });
+}
+
+function selectSearchTask(taskId) {
+  const panel = document.getElementById('search-suggestions');
+  if (panel) panel.style.display = 'none';
+
+  const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+  if (page === 'index') {
+    openEditModal(taskId);
+  } else {
+    window.location.href = `index.html`;
+  }
+}
+
+function selectSearchDream(dreamId) {
+  const panel = document.getElementById('search-suggestions');
+  if (panel) panel.style.display = 'none';
+
+  const page = typeof Components !== 'undefined' ? Components.getCurrentPage() : 'index';
+  if (page === 'bucketlist') {
+    if (typeof BucketListEngine !== 'undefined') BucketListEngine.openAddModal(dreamId);
+  } else {
+    window.location.href = `bucketlist.html`;
   }
 }
 
@@ -836,31 +1066,36 @@ function renderTaskList() {
   if (!tasksContainer) return;
   tasksContainer.innerHTML = '';
 
+  const hasSearch = Boolean(state.searchQuery);
+
   let filtered = state.tasks.filter(task => {
-    // Horizon filter
-    if (state.activeHorizon === 'general') {
-      if (!['daily', 'weekly', 'monthly'].includes(task.tier)) return false;
-    } else if (state.activeHorizon !== 'all') {
-      if (task.tier !== state.activeHorizon) return false;
-    }
+    // When searching, search across ALL tiers so user finds matching tasks regardless of activeHorizon filter
+    if (!hasSearch) {
+      // Horizon filter
+      if (state.activeHorizon === 'general') {
+        if (!['daily', 'weekly', 'monthly'].includes(task.tier)) return false;
+      } else if (state.activeHorizon !== 'all') {
+        if (task.tier !== state.activeHorizon) return false;
+      }
 
-    // Status filter
-    if (state.statusFilter === 'active' && task.completed) return false;
-    if (state.statusFilter === 'completed' && !task.completed) return false;
+      // Status filter
+      if (state.statusFilter === 'active' && task.completed) return false;
+      if (state.statusFilter === 'completed' && !task.completed) return false;
 
-    // Category filter
-    if (state.categoryFilter !== 'all' && task.category !== state.categoryFilter) return false;
+      // Category filter
+      if (state.categoryFilter !== 'all' && task.category !== state.categoryFilter) return false;
 
-    // Priority filter
-    if (state.priorityFilter !== 'all' && task.priority !== state.priorityFilter) return false;
-
-    // Search query
-    if (state.searchQuery) {
-      const matchTitle = task.title.toLowerCase().includes(state.searchQuery);
-      const matchDesc = (task.description || '').toLowerCase().includes(state.searchQuery);
-      const matchCat = (task.category || '').toLowerCase().includes(state.searchQuery);
-      const matchTags = (task.tags || []).some(tg => tg.toLowerCase().includes(state.searchQuery));
-      if (!matchTitle && !matchDesc && !matchCat && !matchTags) return false;
+      // Priority filter
+      if (state.priorityFilter !== 'all' && task.priority !== state.priorityFilter) return false;
+    } else {
+      // Search matching across title, desc, category, tier, tags
+      const q = state.searchQuery.toLowerCase();
+      const matchTitle = (task.title || '').toLowerCase().includes(q);
+      const matchDesc = (task.description || '').toLowerCase().includes(q);
+      const matchCat = (task.category || '').toLowerCase().includes(q);
+      const matchTier = (task.tier || '').toLowerCase().includes(q);
+      const matchTags = (task.tags || []).some(tg => tg.toLowerCase().includes(q));
+      if (!matchTitle && !matchDesc && !matchCat && !matchTags && !matchTier) return false;
     }
 
     return true;
@@ -870,18 +1105,18 @@ function renderTaskList() {
     tasksContainer.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">🎯</div>
-        <div class="empty-title">No goals or tasks match your filter</div>
-        <div class="empty-sub">Try adjusting search parameters or click "Add Goal / Task" to create one.</div>
+        <div class="empty-title">${hasSearch ? `No goals match "${escapeHTML(state.searchQuery)}"` : 'No goals or tasks match your filter'}</div>
+        <div class="empty-sub">${hasSearch ? 'Try different keywords or check spelling.' : 'Try adjusting search parameters or click "Add Goal / Task" to create one.'}</div>
       </div>
     `;
     return;
   }
 
-  // If "general" or "all" horizon selected, group by visible tiers
-  if (state.activeHorizon === 'general' || state.activeHorizon === 'all') {
-    const visibleTiers = state.activeHorizon === 'general'
-      ? TIERS.filter(t => ['daily', 'weekly', 'monthly'].includes(t.id))
-      : TIERS;
+  // If searching or "general"/"all" selected, group by visible tiers
+  if (hasSearch || state.activeHorizon === 'general' || state.activeHorizon === 'all') {
+    const visibleTiers = (hasSearch || state.activeHorizon === 'all')
+      ? TIERS
+      : TIERS.filter(t => ['daily', 'weekly', 'monthly'].includes(t.id));
 
     visibleTiers.forEach(tierObj => {
       const tierItems = filtered.filter(t => t.tier === tierObj.id);
@@ -968,7 +1203,18 @@ function renderEisenhowerMatrix() {
   const container = document.getElementById('eisenhower-matrix-container');
   if (!container) return;
 
-  const activeTasks = state.tasks.filter(t => !t.completed);
+  let activeTasks = state.tasks.filter(t => !t.completed);
+  if (state.searchQuery) {
+    const q = state.searchQuery.toLowerCase();
+    activeTasks = activeTasks.filter(t => {
+      const matchTitle = (t.title || '').toLowerCase().includes(q);
+      const matchDesc = (t.description || '').toLowerCase().includes(q);
+      const matchCat = (t.category || '').toLowerCase().includes(q);
+      const matchTags = (t.tags || []).some(tg => tg.toLowerCase().includes(q));
+      return matchTitle || matchDesc || matchCat || matchTags;
+    });
+  }
+
   const quadrantTasks = { q1: [], q2: [], q3: [], q4: [] };
   activeTasks.forEach(t => {
     const q = classifyTaskQuadrant(t);
