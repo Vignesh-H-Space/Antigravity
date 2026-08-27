@@ -941,41 +941,205 @@ body {
   margin-bottom: 8px;
 }
 
-/* Daily Mindset Ribbon */
+/* ══════════════════════════════════════════════════════════════════
+   💡 PROMINENT EXECUTIVE DAILY PRODUCTIVITY PRINCIPLE RIBBON
+   ══════════════════════════════════════════════════════════════════ */
 .mindset-ribbon {
-  margin: 0 0 20px 0;
-  background: var(--bg-card);
-  border: 1px dashed var(--border-color);
+  margin: 0 0 22px 0;
+  background: linear-gradient(135deg, rgba(24, 20, 10, 0.95) 0%, rgba(16, 16, 22, 0.98) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  border-left: 4px solid var(--accent-primary);
   border-radius: var(--radius-lg);
-  padding: 14px 20px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.09), inset 0 1px 0 rgba(255, 215, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mindset-ribbon:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.16), inset 0 1px 0 rgba(255, 215, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.mindset-ribbon.principle-changed {
+  animation: principlePulse 0.5s ease-out;
+}
+
+@keyframes principlePulse {
+  0% {
+    transform: scale(0.99);
+    box-shadow: 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    transform: scale(1.005);
+    box-shadow: 0 0 35px rgba(245, 158, 11, 0.28);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.09);
+  }
+}
+
+.mindset-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mindset-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.12));
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
 }
 
 .mindset-icon {
-  font-size: 1.6rem;
-  flex-shrink: 0;
+  font-size: 1.45rem;
+  line-height: 1;
 }
 
 .mindset-content {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mindset-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mindset-label {
   font-size: 0.68rem;
-  font-weight: 800;
-  color: #fbbf24;
-  letter-spacing: 0.08em;
+  font-weight: 900;
+  color: var(--accent-primary);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.mindset-author-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
 }
 
 .mindset-quote {
-  font-size: 0.88rem;
+  font-family: var(--font-heading);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #f5f0e8;
+  line-height: 1.42;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+[data-theme="light"] .mindset-ribbon {
+  background: linear-gradient(135deg, #fffcf7 0%, #faf5ea 100%);
+  border-color: rgba(217, 119, 6, 0.35);
+  border-left-color: #d97706;
+}
+
+[data-theme="light"] .mindset-quote {
+  color: #1c1917;
+}
+
+[data-theme="light"] .mindset-author-pill {
+  background: rgba(0, 0, 0, 0.05);
+  color: #57534e;
+}
+
+.mindset-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mindset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.mindset-btn:hover {
+  background: var(--accent-primary);
+  color: #08080a;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+.mindset-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  font-style: italic;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mindset-icon-btn:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+@media (max-width: 768px) {
+  .mindset-ribbon {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+
+  .mindset-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .mindset-quote {
+    font-size: 0.94rem;
+  }
 }
 
 /* Progress Summary Grid */
@@ -5814,10 +5978,10 @@ body {
   /* Daily Mindset Ribbon */
   .mindset-ribbon {
     flex-direction: column;
-    text-align: center;
-    padding: 14px;
-    gap: 8px;
-    margin: 0 0 14px 0;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 12px;
+    margin: 0 0 16px 0;
   }
 
   /* Horizon Launchpad Cards */

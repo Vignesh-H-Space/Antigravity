@@ -25,12 +25,28 @@
       <!-- Header Mount Point -->
       <div id="header-mount"></div>
 
-      <!-- Daily Mindset / Affirmation Principle Ribbon (Top Priming) -->
+      <!-- Daily Mindset / Affirmation Principle Ribbon (Executive Priming Banner) -->
       <div class="mindset-ribbon" id="mindset-ribbon">
-        <div class="mindset-icon">💡</div>
-        <div class="mindset-content">
-          <span class="mindset-label">DAILY PRODUCTIVITY PRINCIPLE</span>
-          <p class="mindset-quote" id="mindset-quote">"Focus on high-leverage execution. Consistent daily action compounds into extraordinary outcomes."</p>
+        <div class="mindset-left">
+          <div class="mindset-icon-box" id="mindset-icon-box">
+            <span class="mindset-icon" id="mindset-emoji">⚡</span>
+          </div>
+          <div class="mindset-content">
+            <div class="mindset-tag-row">
+              <span class="mindset-label" id="mindset-category">EXECUTIVE MENTAL MODEL</span>
+              <span class="mindset-author-pill" id="mindset-author">— James Clear</span>
+            </div>
+            <p class="mindset-quote" id="mindset-quote">"You do not rise to the level of your goals. You fall to the level of your systems."</p>
+          </div>
+        </div>
+        <div class="mindset-actions">
+          <button class="mindset-btn" id="btn-refresh-mindset" onclick="rotateMindsetPrinciple(true)" title="Shuffle to another executive principle">
+            <i data-lucide="shuffle"></i>
+            <span>New Principle</span>
+          </button>
+          <button class="mindset-icon-btn" id="btn-copy-mindset" onclick="copyMindsetPrinciple()" title="Copy quote to clipboard">
+            <i data-lucide="copy"></i>
+          </button>
         </div>
       </div>
 

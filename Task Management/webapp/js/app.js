@@ -834,16 +834,200 @@ function updateHeaderAvatar() {
   }
 }
 
-// Quotes list for daily inspiration on Home
-const PRODUCTIVITY_QUOTES = [
-  "Focus on high-leverage execution. Consistent daily action compounds into extraordinary outcomes.",
-  "Discipline is choosing between what you want now and what you want most.",
-  "You do not rise to the level of your goals. You fall to the level of your systems.",
-  "Energy flows where attention goes. Eliminate distractions and conquer the day.",
-  "Action cures fear. Take the next highest-leverage step right now.",
-  "Small daily improvements over time lead to stunning results.",
-  "Strategy is about making choices, trade-offs; it's about deliberately choosing to be different."
+// ══════════════════════════════════════════════════════════════════
+// 💡 Executive Mental Models & Daily Principles Database (30+ Curated Models)
+// ══════════════════════════════════════════════════════════════════
+const EXECUTIVE_PRINCIPLES = [
+  {
+    category: "SYSTEMS THINKING",
+    emoji: "⚙️",
+    quote: "You do not rise to the level of your goals. You fall to the level of your systems. Focus on daily trajectory over fleeting motivation.",
+    author: "James Clear"
+  },
+  {
+    category: "HIGH-LEVERAGE EXECUTION",
+    emoji: "⚡",
+    quote: "Focus on high-leverage execution. 20% of your priorities will produce 80% of your breakthrough outcomes. Ruthlessly protect that 20%.",
+    author: "Vilfredo Pareto"
+  },
+  {
+    category: "DEEP WORK ESSENTIAL",
+    emoji: "🧠",
+    quote: "High-quality work produced = (Time Spent) × (Intensity of Focus). Eliminate shallow context switching to dominate your craft.",
+    author: "Cal Newport"
+  },
+  {
+    category: "SPEED OF IMPLEMENTATION",
+    emoji: "🚀",
+    quote: "Speed of implementation is the ultimate competitive advantage. Turn high-conviction decisions into immediate tangible momentum.",
+    author: "Peter Drucker"
+  },
+  {
+    category: "ESSENTIALISM",
+    emoji: "🎯",
+    quote: "If you don't prioritize your life, someone else will. Say no to the trivial many so you can execute the vital few.",
+    author: "Greg McKeown"
+  },
+  {
+    category: "STOIC MASTERY",
+    emoji: "🏛️",
+    quote: "The impediment to action advances action. What stands in the way becomes the way. Embrace friction as fuel for greatness.",
+    author: "Marcus Aurelius"
+  },
+  {
+    category: "RADICAL CLARITY",
+    emoji: "💎",
+    quote: "Deciding what NOT to do is as important as deciding what to do. Simplicity and relentless focus compound into excellence.",
+    author: "Steve Jobs"
+  },
+  {
+    category: "COMPOUND MOMENTUM",
+    emoji: "📈",
+    quote: "The big returns are not in the single action, but in the relentless daily compounding. Consistency is the true multiplier.",
+    author: "Charlie Munger"
+  },
+  {
+    category: "BIAS FOR ACTION",
+    emoji: "🔥",
+    quote: "Action cures fear, hesitation, and over-analysis. Take the next highest-leverage step right now with full conviction.",
+    author: "David Schwartz"
+  },
+  {
+    category: "ENERGY OVER TIME",
+    emoji: "🔋",
+    quote: "Manage your energy, not just your time. Execute your most demanding strategic sprint when your cognitive focus is at its peak.",
+    author: "Tony Schwartz"
+  },
+  {
+    category: "THE ONE THING",
+    emoji: "📌",
+    quote: "What's the ONE Thing you can execute today such that by doing it everything else will become easier or unnecessary?",
+    author: "Gary Keller"
+  },
+  {
+    category: "TACTICAL PATIENCE",
+    emoji: "⏳",
+    quote: "Most people overestimate what they can do in a day, and underestimate what they can achieve in a year of unbroken execution.",
+    author: "Bill Gates"
+  },
+  {
+    category: "INVERSION PRINCIPLE",
+    emoji: "🔄",
+    quote: "Invert, always invert. Figure out what guarantees failure, then systematically engineer it out of your daily operating rhythm.",
+    author: "Carl Jacobi"
+  },
+  {
+    category: "FIRST PRINCIPLES",
+    emoji: "🔬",
+    quote: "Boil things down to their fundamental truths and reason up from there, rather than operating by shallow analogy.",
+    author: "Elon Musk"
+  },
+  {
+    category: "UNRELENTING DISCIPLINE",
+    emoji: "🛡️",
+    quote: "Discipline is choosing between what you want right now and what you want most. Hold the line on your non-negotiables.",
+    author: "Abraham Lincoln"
+  },
+  {
+    category: "EXECUTION OVER IDEAS",
+    emoji: "💡",
+    quote: "Ideas without execution are hallucinations. The marketplace rewards finished deliverables, not unacted intentions.",
+    author: "Sam Altman"
+  },
+  {
+    category: "FLOW STATE ARCHITECTURE",
+    emoji: "🌊",
+    quote: "Protect uninterrupted cognitive flow with your life. Multitasking is merely the illusion of productivity masking shallow work.",
+    author: "Mihaly Csikszentmihalyi"
+  },
+  {
+    category: "MARGIN OF SAFETY",
+    emoji: "🧱",
+    quote: "Build buffers into your roadmap. True executive mastery is performing with composure when reality deviates from plan.",
+    author: "Nassim Nicholas Taleb"
+  },
+  {
+    category: "THE TWO-MINUTE CADENCE",
+    emoji: "⏱️",
+    quote: "Never leave the site of a strategic decision without taking an immediate micro-action toward its execution.",
+    author: "Tony Robbins"
+  },
+  {
+    category: "NORTH STAR ALIGNMENT",
+    emoji: "🧭",
+    quote: "If a daily action doesn't bridge toward your Annual Vision or Quarterly summit, question why it exists on your agenda.",
+    author: "Tesseract Operating Creed"
+  },
+  {
+    category: "RELENTLESS SIMPLIFICATION",
+    emoji: "✂️",
+    quote: "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.",
+    author: "Antoine de Saint-Exupéry"
+  }
 ];
+
+let currentMindsetIndex = -1;
+
+function rotateMindsetPrinciple(isManual = false) {
+  const quoteEl = document.getElementById('mindset-quote');
+  const catEl = document.getElementById('mindset-category');
+  const authorEl = document.getElementById('mindset-author');
+  const emojiEl = document.getElementById('mindset-emoji');
+  const ribbon = document.getElementById('mindset-ribbon');
+
+  if (!quoteEl || !catEl) return;
+
+  if (isManual) {
+    let nextIdx;
+    do {
+      nextIdx = Math.floor(Math.random() * EXECUTIVE_PRINCIPLES.length);
+    } while (nextIdx === currentMindsetIndex && EXECUTIVE_PRINCIPLES.length > 1);
+    currentMindsetIndex = nextIdx;
+  } else {
+    // Deterministic daily rotation based on Date string hash
+    const todayStr = new Date().toISOString().split('T')[0];
+    let hash = 0;
+    for (let i = 0; i < todayStr.length; i++) {
+      hash = ((hash << 5) - hash) + todayStr.charCodeAt(i);
+      hash |= 0;
+    }
+    currentMindsetIndex = Math.abs(hash) % EXECUTIVE_PRINCIPLES.length;
+  }
+
+  const p = EXECUTIVE_PRINCIPLES[currentMindsetIndex];
+  if (!p) return;
+
+  // Add subtle animation trigger
+  if (ribbon) {
+    ribbon.classList.remove('principle-changed');
+    void ribbon.offsetWidth; // trigger reflow
+    ribbon.classList.add('principle-changed');
+  }
+
+  quoteEl.textContent = `"${p.quote}"`;
+  catEl.textContent = p.category;
+  if (authorEl) authorEl.textContent = `— ${p.author}`;
+  if (emojiEl) emojiEl.textContent = p.emoji;
+
+  if (isManual && typeof showToast === 'function') {
+    showToast(`💡 New Principle: ${p.category}`, 'info');
+  }
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function copyMindsetPrinciple() {
+  const p = EXECUTIVE_PRINCIPLES[currentMindsetIndex] || EXECUTIVE_PRINCIPLES[0];
+  if (!p) return;
+  const text = `"${p.quote}" — ${p.author} [${p.category}]`;
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showToast === 'function') {
+      showToast('📋 Daily Principle copied to clipboard!', 'success');
+    }
+  }).catch(() => {
+    if (typeof showToast === 'function') showToast('Failed to copy.', 'error');
+  });
+}
 
 // Main Render Function
 function renderAll() {
@@ -978,12 +1162,8 @@ function renderHomeCommandHero() {
     }
   }
 
-  // Rotate mindset quote based on day of year
-  const quoteEl = document.getElementById('mindset-quote');
-  if (quoteEl) {
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-    quoteEl.textContent = `"${PRODUCTIVITY_QUOTES[dayOfYear % PRODUCTIVITY_QUOTES.length]}"`;
-  }
+  // Populate / Rotate mindset principle
+  rotateMindsetPrinciple(false);
 }
 
 // Keep sidebar tabs and filter dropdown in sync
