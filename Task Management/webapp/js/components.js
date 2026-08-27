@@ -104,6 +104,10 @@ const Components = {
           <i data-lucide="bar-chart-3"></i>
           <span>Productivity Metrics</span>
         </button>
+        <button class="nav-item" id="btn-view-report" onclick="Components.closeMobileSidebar(); if(typeof WeeklyReportEngine !== 'undefined') WeeklyReportEngine.open();" title="Generate Executive Weekly Debrief">
+          <i data-lucide="file-text"></i>
+          <span>Weekly Report</span>
+        </button>
       </nav>
 
       <div class="sidebar-footer">
