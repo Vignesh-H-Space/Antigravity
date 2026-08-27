@@ -6219,3 +6219,331 @@ body {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   📄 EXECUTIVE WEEKLY REPORT MODAL & PRINT STYLES
+   ══════════════════════════════════════════════════════════════════ */
+.report-modal-card {
+  max-width: 680px;
+  width: 95%;
+  max-height: 90vh;
+}
+
+.report-modal-body {
+  padding: 20px;
+  background: var(--bg-primary);
+  overflow-y: auto;
+}
+
+.report-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-header-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 16, 22, 0.8));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  text-align: center;
+}
+
+.report-badge-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.report-doc-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.report-meta-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.report-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .report-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.report-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.report-stat-card.gold {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), var(--bg-card));
+}
+
+.report-stat-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.report-stat-value {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+
+.report-stat-sub {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.report-section-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.report-count-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.report-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-tier-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-tier-header {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 0 2px;
+}
+
+.report-task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+}
+
+.report-task-row.active {
+  background: rgba(245, 158, 11, 0.04);
+  border-left: 2px solid var(--accent-primary);
+}
+
+.report-check {
+  color: #10b981;
+  font-weight: 900;
+  font-size: 0.9rem;
+}
+
+.report-bullet {
+  color: var(--accent-primary);
+  font-weight: 900;
+}
+
+.report-task-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-prio-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.report-cat-tag {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.report-tier-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  background: rgba(245, 158, 11, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.report-empty-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Habits table in report */
+.report-habits-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-habit-header-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  padding: 0 8px 4px;
+}
+
+.report-habit-data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+}
+
+.report-habit-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.report-habit-dots {
+  color: var(--accent-primary);
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+  padding: 0 12px;
+}
+
+.report-habit-pct {
+  font-weight: 700;
+  color: var(--text-primary);
+  width: 45px;
+  text-align: right;
+}
+
+.report-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Print Stylesheet */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #weekly-report-modal,
+  #weekly-report-modal * {
+    visibility: visible;
+  }
+  #weekly-report-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: block !important;
+  }
+  .report-modal-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+  .ritual-modal-header .modal-close-btn,
+  .report-modal-footer {
+    display: none !important;
+  }
+  .report-modal-body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .report-stat-card,
+  .report-section-box,
+  .report-task-row,
+  .report-habit-data-row {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+}
+
+

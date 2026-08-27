@@ -570,6 +570,38 @@ const Components = {
       </div>
     </div>
 
+    <!-- 📄 Executive Weekly Report Exporter Modal -->
+    <div class="modal-backdrop" id="weekly-report-modal" style="display: none;">
+      <div class="ritual-modal-card report-modal-card">
+        <div class="ritual-modal-header">
+          <div class="ritual-header-icon">📄</div>
+          <div>
+            <h3 class="ritual-modal-title">Executive Weekly Debrief</h3>
+            <p class="ritual-modal-sub" id="report-modal-daterange">Aggregating multi-horizon performance across the past 7 days.</p>
+          </div>
+          <button class="modal-close-btn" onclick="WeeklyReportEngine.close();">&times;</button>
+        </div>
+        <div class="ritual-modal-body report-modal-body" id="weekly-report-body">
+          <!-- Injected by WeeklyReportEngine.generateHTMLPreview() -->
+        </div>
+        <div class="ritual-modal-footer report-modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="WeeklyReportEngine.close();">Close</button>
+          <button type="button" class="btn btn-secondary" onclick="WeeklyReportEngine.printReport();" title="Print or save as PDF">
+            <i data-lucide="printer"></i>
+            <span>Print Report</span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="WeeklyReportEngine.downloadMarkdown();" title="Download formatted .md file">
+            <i data-lucide="download"></i>
+            <span>Download .md</span>
+          </button>
+          <button type="button" class="btn btn-primary" onclick="WeeklyReportEngine.copyMarkdown();" title="Copy Markdown to Clipboard">
+            <i data-lucide="copy"></i>
+            <span>Copy as Markdown</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Floating XP Burst Animation Container -->
     <div class="xp-burst-container" id="xp-burst-container"></div>
 

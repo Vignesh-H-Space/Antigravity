@@ -2695,6 +2695,373 @@ const FocusEngine = {
   }
 };
 
+// ══════════════════════════════════════════════════════════════════
+// 📄 1-Click Executive Weekly Report Exporter Engine
+// ══════════════════════════════════════════════════════════════════
+const WeeklyReportEngine = {
+  getReportData() {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const userName = (state.profile && state.profile.name) ? state.profile.name : 'Executive Leader';
+    const totalXP = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.totalXP : 0;
+    const level = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.level : 1;
+    const rankTitle = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.rankTitle : 'Apprentice';
+    const streak = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.streak : 0;
+
+    // Completed tasks (either in last 7 days or marked completed)
+    const completedTasks = state.tasks.filter(t => {
+      if (!t.completed) return false;
+      if (t.completedAt) {
+        return new Date(t.completedAt) >= sevenDaysAgo;
+      }
+      return true; // Fallback for sample completed tasks
+    });
+
+    const activeTasks = state.tasks.filter(t => !t.completed);
+
+    // Deep Work sessions
+    let sessions = [];
+    if (typeof FocusEngine !== 'undefined') {
+      sessions = FocusEngine.getSessions();
+    }
+    const weeklySessions = sessions.filter(s => {
+      if (!s.timestamp) return true;
+      return new Date(s.timestamp) >= sevenDaysAgo;
+    });
+    const focusMins = weeklySessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+    const focusHours = (focusMins / 60).toFixed(1);
+    const avgSessionMins = weeklySessions.length > 0 ? Math.round(focusMins / weeklySessions.length) : 0;
+    const maxSessionMins = weeklySessions.length > 0 ? Math.max(...weeklySessions.map(s => s.durationMinutes || 0)) : 0;
+
+    // Habits consistency
+    let habitsList = [];
+    if (typeof HabitsEngine !== 'undefined' && HabitsEngine.habits && HabitsEngine.habits.length > 0) {
+      habitsList = HabitsEngine.habits;
+    } else {
+      try {
+        const raw = localStorage.getItem('tesseract_habits_data');
+        if (raw) habitsList = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    // Calculate 7-day adherence for habits
+    const last7DayKeys = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      last7DayKeys.push(d.toISOString().split('T')[0]);
+    }
+
+    let totalHabitChecks = 0;
+    let possibleHabitChecks = habitsList.length * 7;
+    const habitsStats = habitsList.map(h => {
+      let checks = 0;
+      let dotString = '';
+      last7DayKeys.forEach(k => {
+        if (h.history && h.history[k]) {
+          checks++;
+          dotString += '●';
+        } else {
+          dotString += '○';
+        }
+      });
+      totalHabitChecks += checks;
+      const pct = Math.round((checks / 7) * 100);
+      return {
+        id: h.id,
+        title: h.title,
+        icon: h.icon || '🎯',
+        category: h.category || 'General',
+        checks,
+        pct,
+        dotString
+      };
+    });
+    const overallHabitAdherence = possibleHabitChecks > 0 ? Math.round((totalHabitChecks / possibleHabitChecks) * 100) : 100;
+
+    // Strategic Alignment Score
+    const totalTactical = state.tasks.filter(t => ['daily', 'weekly'].includes(t.tier) && !t.completed).length;
+    const linkedTactical = state.tasks.filter(t => ['daily', 'weekly'].includes(t.tier) && !t.completed && t.parentId).length;
+    const alignmentScore = totalTactical > 0 ? Math.round((linkedTactical / totalTactical) * 100) : 100;
+
+    const dateRangeStr = `${sevenDaysAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+    return {
+      userName,
+      now,
+      sevenDaysAgo,
+      dateRangeStr,
+      totalXP,
+      level,
+      rankTitle,
+      streak,
+      alignmentScore,
+      completedTasks,
+      activeTasks,
+      weeklySessions,
+      focusMins,
+      focusHours,
+      avgSessionMins,
+      maxSessionMins,
+      habitsStats,
+      overallHabitAdherence
+    };
+  },
+
+  generateMarkdown() {
+    const data = this.getReportData();
+    let md = `# 📄 TESSERACT EXECUTIVE WEEKLY REPORT\n`;
+    md += `> **Executive:** ${data.userName} | **Period:** ${data.dateRangeStr} | **Generated:** ${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}\n\n`;
+    md += `---\n\n`;
+
+    md += `## 📊 Executive Summary\n`;
+    md += `| Key Metric | Status / Value |\n`;
+    md += `|---|---|\n`;
+    md += `| **Executive Rank** | Level ${data.level} — ${data.rankTitle} |\n`;
+    md += `| **Total XP** | ${data.totalXP.toLocaleString()} XP |\n`;
+    md += `| **Execution Streak** | ${data.streak} Days 🔥 |\n`;
+    md += `| **Strategic Alignment** | ${data.alignmentScore}% ${data.alignmentScore >= 85 ? '🟢 Optimal' : data.alignmentScore >= 70 ? '🟡 Moderate' : '🔴 Action Required'} |\n`;
+    md += `| **Habit Adherence** | ${data.overallHabitAdherence}% |\n`;
+    md += `| **Deep Work Logged** | ${data.focusHours} Hours (${data.weeklySessions.length} sessions) |\n\n`;
+
+    md += `## ✅ Goals & Milestones Completed (${data.completedTasks.length})\n`;
+    TIERS.forEach(tierObj => {
+      const tierItems = data.completedTasks.filter(t => t.tier === tierObj.id);
+      if (tierItems.length > 0) {
+        md += `### ${tierObj.emoji} ${tierObj.name} (${tierItems.length})\n`;
+        tierItems.forEach(t => {
+          md += `- [x] **[${t.priority.toUpperCase()}]** ${t.title} *(#${t.category || 'General'})*\n`;
+          if (t.description) md += `  - *Notes:* ${t.description.replace(/\n/g, ' ')}\n`;
+        });
+        md += `\n`;
+      }
+    });
+
+    if (data.completedTasks.length === 0) {
+      md += `*No completed goals logged in this 7-day period.*\n\n`;
+    }
+
+    md += `## 🧠 Deep Work & Flow Velocity\n`;
+    md += `| Metric | Weekly Total |\n`;
+    md += `|---|---|\n`;
+    md += `| **Total Focus Hours** | ${data.focusHours} hrs (${data.focusMins} mins) |\n`;
+    md += `| **Completed Sprints** | ${data.weeklySessions.length} sessions |\n`;
+    md += `| **Average Session** | ${data.avgSessionMins} mins |\n`;
+    md += `| **Peak Sprint** | ${data.maxSessionMins} mins |\n\n`;
+
+    md += `## 🔁 Habit Consistency Matrix (Past 7 Days)\n`;
+    md += `| Habit | 7-Day Consistency | Adherence |\n`;
+    md += `|---|---|---|\n`;
+    data.habitsStats.forEach(h => {
+      md += `| ${h.icon} ${h.title} | \`${h.dotString}\` | **${h.pct}%** |\n`;
+    });
+    md += `| **Overall Consistency Score** | | **${data.overallHabitAdherence}%** |\n\n`;
+
+    md += `## 🎯 High-Leverage Priorities In Flight\n`;
+    const topActive = data.activeTasks.slice(0, 8);
+    if (topActive.length > 0) {
+      topActive.forEach(t => {
+        const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: '📌', name: 'Task' };
+        md += `- [ ] **[${t.priority.toUpperCase()}]** ${t.title} — *${tierObj.emoji} ${tierObj.name}* *(#${t.category || 'General'})*\n`;
+      });
+      md += `\n`;
+    } else {
+      md += `*All active objectives cleared!*\n\n`;
+    }
+
+    md += `---\n*Generated automatically by Tesseract Multi-Horizon Executive Operating System.*`;
+    return md;
+  },
+
+  generateHTMLPreview() {
+    const data = this.getReportData();
+    let html = `
+      <div class="report-preview-container">
+        <div class="report-header-banner">
+          <div class="report-badge-pill">OFFICIAL EXECUTIVE DEBRIEF</div>
+          <h2 class="report-doc-title">TESSERACT WEEKLY REPORT</h2>
+          <div class="report-meta-sub">
+            <span>👤 ${escapeHTML(data.userName)}</span>
+            <span>•</span>
+            <span>📅 ${data.dateRangeStr}</span>
+          </div>
+        </div>
+
+        <!-- 4-Stat Summary Cards -->
+        <div class="report-stats-grid">
+          <div class="report-stat-card gold">
+            <span class="report-stat-label">EXECUTIVE RANK</span>
+            <span class="report-stat-value">Lvl ${data.level}</span>
+            <span class="report-stat-sub">${data.rankTitle}</span>
+          </div>
+          <div class="report-stat-card">
+            <span class="report-stat-label">TOTAL XP</span>
+            <span class="report-stat-value">${data.totalXP.toLocaleString()}</span>
+            <span class="report-stat-sub">${data.streak} Day Streak 🔥</span>
+          </div>
+          <div class="report-stat-card">
+            <span class="report-stat-label">DEEP WORK</span>
+            <span class="report-stat-value">${data.focusHours}h</span>
+            <span class="report-stat-sub">${data.weeklySessions.length} Flow Sprints</span>
+          </div>
+          <div class="report-stat-card">
+            <span class="report-stat-label">HABIT SCORE</span>
+            <span class="report-stat-value">${data.overallHabitAdherence}%</span>
+            <span class="report-stat-sub">7-Day Consistency</span>
+          </div>
+        </div>
+
+        <!-- Section: Completed Goals -->
+        <div class="report-section-box">
+          <div class="report-section-title">
+            <span>✅ Completed Goals & Milestones</span>
+            <span class="report-count-badge">${data.completedTasks.length} Done</span>
+          </div>
+          <div class="report-tasks-list">
+    `;
+
+    if (data.completedTasks.length === 0) {
+      html += `<div class="report-empty-note">No goals marked completed in this period.</div>`;
+    } else {
+      TIERS.forEach(tierObj => {
+        const tierItems = data.completedTasks.filter(t => t.tier === tierObj.id);
+        if (tierItems.length > 0) {
+          html += `
+            <div class="report-tier-group">
+              <div class="report-tier-header" style="color: ${tierObj.color || 'var(--accent-primary)'}">
+                ${tierObj.emoji} ${tierObj.name} (${tierItems.length})
+              </div>
+          `;
+          tierItems.forEach(t => {
+            html += `
+              <div class="report-task-row">
+                <span class="report-check">✓</span>
+                <span class="report-task-name">${escapeHTML(t.title)}</span>
+                <span class="report-prio-pill prio-${t.priority}">${t.priority}</span>
+                <span class="report-cat-tag">#${escapeHTML(t.category || 'General')}</span>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+      });
+    }
+
+    html += `
+          </div>
+        </div>
+
+        <!-- Section: Habit Consistency Matrix -->
+        <div class="report-section-box">
+          <div class="report-section-title">
+            <span>🔁 Habit Cadence Matrix</span>
+            <span class="report-count-badge">${data.overallHabitAdherence}% Adherence</span>
+          </div>
+          <div class="report-habits-table">
+            <div class="report-habit-header-row">
+              <span>HABIT</span>
+              <span>7-DAY CONSISTENCY</span>
+              <span>SCORE</span>
+            </div>
+    `;
+
+    data.habitsStats.forEach(h => {
+      html += `
+        <div class="report-habit-data-row">
+          <span class="report-habit-name">${h.icon} ${escapeHTML(h.title)}</span>
+          <span class="report-habit-dots font-mono">${h.dotString}</span>
+          <span class="report-habit-pct">${h.pct}%</span>
+        </div>
+      `;
+    });
+
+    html += `
+          </div>
+        </div>
+
+        <!-- Section: Active Priorities -->
+        <div class="report-section-box">
+          <div class="report-section-title">
+            <span>🎯 High-Leverage Objectives In Flight</span>
+            <span class="report-count-badge">${data.activeTasks.length} Active</span>
+          </div>
+          <div class="report-tasks-list">
+    `;
+
+    const topActive = data.activeTasks.slice(0, 6);
+    if (topActive.length === 0) {
+      html += `<div class="report-empty-note">All strategic objectives completed!</div>`;
+    } else {
+      topActive.forEach(t => {
+        const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: '📌', name: 'Task' };
+        html += `
+          <div class="report-task-row active">
+            <span class="report-bullet">•</span>
+            <span class="report-task-name">${escapeHTML(t.title)}</span>
+            <span class="report-tier-badge">${tierObj.emoji} ${tierObj.name}</span>
+            <span class="report-prio-pill prio-${t.priority}">${t.priority}</span>
+          </div>
+        `;
+      });
+    }
+
+    html += `
+          </div>
+        </div>
+      </div>
+    `;
+
+    return html;
+  },
+
+  open() {
+    const modal = document.getElementById('weekly-report-modal');
+    const body = document.getElementById('weekly-report-body');
+    const dateRangeEl = document.getElementById('report-modal-daterange');
+    if (!modal || !body) return;
+
+    const data = this.getReportData();
+    if (dateRangeEl) dateRangeEl.textContent = `Debrief for ${data.dateRangeStr}`;
+    body.innerHTML = this.generateHTMLPreview();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  },
+
+  close() {
+    const modal = document.getElementById('weekly-report-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  },
+
+  copyMarkdown() {
+    const md = this.generateMarkdown();
+    navigator.clipboard.writeText(md).then(() => {
+      showToast('📋 Executive Weekly Report copied to clipboard!', 'success');
+    }).catch(() => {
+      showToast('Failed to copy to clipboard.', 'error');
+    });
+  },
+
+  downloadMarkdown() {
+    const md = this.generateMarkdown();
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const dataStr = "data:text/markdown;charset=utf-8," + encodeURIComponent(md);
+    const anchor = document.createElement('a');
+    anchor.setAttribute("href", dataStr);
+    anchor.setAttribute("download", `tesseract_executive_report_${dateStr}.md`);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    showToast('📥 Downloaded executive weekly report (.md)', 'success');
+  },
+
+  printReport() {
+    window.print();
+  }
+};
+
 // Start application on DOM load
 document.addEventListener('DOMContentLoaded', init);
 
