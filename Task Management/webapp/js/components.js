@@ -612,3 +612,13 @@ const Components = {
     document.body.insertAdjacentHTML('beforeend', extraHTML);
   }
 };
+
+// Register PWA Service Worker
+if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => console.log('Tesseract PWA Service Worker Registered:', reg.scope))
+      .catch((err) => console.log('Tesseract PWA Service Worker Registration Failed:', err));
+  });
+}
+
