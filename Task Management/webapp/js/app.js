@@ -2230,6 +2230,234 @@ function renderProfileView() {
       });
     }
   }
+
+  // Render Personal Creed & Data Vault
+  renderProfileCreed();
+  renderDataVaultStats();
+}
+
+// ── Personal North Star Creed Management ───────────────────
+const DEFAULT_CREED = {
+  mission: 'Architect scalable systems, execute with ruthless consistency, and compound value across all life dimensions.',
+  motto: 'Discipline is freedom. Compound daily.',
+  values: ['Ruthless Prioritization', 'Deep Work Intensity', 'Unwavering Follow-Through']
+};
+
+function getProfileCreed() {
+  if (!state.profile) state.profile = { name: 'Tesseract User', image: null };
+  if (!state.profile.creed) {
+    state.profile.creed = { ...DEFAULT_CREED };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+  }
+  return state.profile.creed;
+}
+
+function renderProfileCreed() {
+  const creed = getProfileCreed();
+  const elMission = document.getElementById('creed-display-mission');
+  const elMotto = document.getElementById('creed-display-motto');
+  const elValues = document.getElementById('creed-display-values');
+
+  if (elMission) elMission.textContent = creed.mission || DEFAULT_CREED.mission;
+  if (elMotto) elMotto.textContent = creed.motto || DEFAULT_CREED.motto;
+  if (elValues) {
+    elValues.innerHTML = '';
+    const icons = ['shield-check', 'zap', 'target'];
+    const valuesList = (creed.values && creed.values.length > 0) ? creed.values : DEFAULT_CREED.values;
+    valuesList.forEach((val, idx) => {
+      const tag = document.createElement('span');
+      tag.className = 'creed-value-tag';
+      tag.innerHTML = `<i data-lucide="${icons[idx % icons.length]}"></i> <span>${escapeHTML(val)}</span>`;
+      elValues.appendChild(tag);
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+function openCreedModal() {
+  const creed = getProfileCreed();
+  const modal = document.getElementById('creed-editor-modal');
+  if (!modal) return;
+
+  const inMission = document.getElementById('creed-input-mission');
+  const inMotto = document.getElementById('creed-input-motto');
+  const inV1 = document.getElementById('creed-input-v1');
+  const inV2 = document.getElementById('creed-input-v2');
+  const inV3 = document.getElementById('creed-input-v3');
+
+  if (inMission) inMission.value = creed.mission || '';
+  if (inMotto) inMotto.value = creed.motto || '';
+  if (inV1) inV1.value = (creed.values && creed.values[0]) || '';
+  if (inV2) inV2.value = (creed.values && creed.values[1]) || '';
+  if (inV3) inV3.value = (creed.values && creed.values[2]) || '';
+
+  modal.style.display = 'flex';
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeCreedModal() {
+  const modal = document.getElementById('creed-editor-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleSaveCreed(event) {
+  event.preventDefault();
+  const inMission = document.getElementById('creed-input-mission');
+  const inMotto = document.getElementById('creed-input-motto');
+  const inV1 = document.getElementById('creed-input-v1');
+  const inV2 = document.getElementById('creed-input-v2');
+  const inV3 = document.getElementById('creed-input-v3');
+
+  const newCreed = {
+    mission: inMission ? inMission.value.trim() : DEFAULT_CREED.mission,
+    motto: inMotto ? inMotto.value.trim() : DEFAULT_CREED.motto,
+    values: [
+      inV1 && inV1.value.trim() ? inV1.value.trim() : DEFAULT_CREED.values[0],
+      inV2 && inV2.value.trim() ? inV2.value.trim() : DEFAULT_CREED.values[1],
+      inV3 && inV3.value.trim() ? inV3.value.trim() : DEFAULT_CREED.values[2]
+    ]
+  };
+
+  if (!state.profile) state.profile = { name: 'Tesseract User', image: null };
+  state.profile.creed = newCreed;
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+
+  closeCreedModal();
+  renderProfileCreed();
+  showToast('Personal North Star Creed saved! 🏛️', 'success');
+}
+
+// ── Executive Data Vault & Backup Control Center ───────────
+function renderDataVaultStats() {
+  const elTasks = document.getElementById('vstat-tasks');
+  const elHabits = document.getElementById('vstat-habits');
+  const elBucket = document.getElementById('vstat-bucket');
+  const elFocus = document.getElementById('vstat-focus');
+  const elStorageSize = document.getElementById('vault-storage-size');
+
+  const taskCount = (state.tasks || []).length;
+  const habitCount = (typeof HabitsEngine !== 'undefined' && HabitsEngine.habits) ? HabitsEngine.habits.length : 0;
+  const bucketCount = (typeof BucketListEngine !== 'undefined' && BucketListEngine.dreams) ? BucketListEngine.dreams.length : 0;
+  const focusCount = (typeof FocusEngine !== 'undefined') ? FocusEngine.getSessions().length : 0;
+
+  if (elTasks) elTasks.textContent = taskCount;
+  if (elHabits) elHabits.textContent = habitCount;
+  if (elBucket) elBucket.textContent = bucketCount;
+  if (elFocus) elFocus.textContent = focusCount;
+
+  if (elStorageSize) {
+    let totalBytes = 0;
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        totalBytes += (localStorage[key].length + key.length) * 2;
+      }
+    }
+    const kb = (totalBytes / 1024).toFixed(1);
+    const pct = ((totalBytes / (5 * 1024 * 1024)) * 100).toFixed(1);
+    elStorageSize.textContent = `${kb} KB used (${pct}% of 5 MB limit)`;
+  }
+}
+
+function exportDataJSON() {
+  const fullBackup = {
+    version: '2.0',
+    exportedAt: new Date().toISOString(),
+    tasks: state.tasks,
+    profile: state.profile,
+    streak: state.streak,
+    xpData: (typeof XPEngine !== 'undefined') ? XPEngine.data : null,
+    habits: (typeof HabitsEngine !== 'undefined') ? HabitsEngine.habits : null,
+    bucketList: (typeof BucketListEngine !== 'undefined') ? BucketListEngine.dreams : null,
+    focusSessions: (typeof FocusEngine !== 'undefined') ? FocusEngine.getSessions() : null
+  };
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `tesseract_executive_backup_${new Date().toISOString().split('T')[0]}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  showToast('Executive database backup downloaded! 💾', 'success');
+}
+
+function triggerImportJSON() {
+  const input = document.getElementById('vault-import-input');
+  if (input) input.click();
+}
+
+function handleVaultImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data && data.version && data.tasks) {
+        // Full Executive Backup
+        state.tasks = data.tasks;
+        saveData();
+        if (data.profile) {
+          state.profile = data.profile;
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(state.profile));
+        }
+        if (data.streak) {
+          state.streak = data.streak;
+          localStorage.setItem(STREAK_KEY, JSON.stringify(state.streak));
+        }
+        if (data.xpData && typeof XPEngine !== 'undefined') {
+          XPEngine.data = data.xpData;
+          XPEngine.save();
+        }
+        if (data.habits && typeof HabitsEngine !== 'undefined') {
+          HabitsEngine.habits = data.habits;
+          HabitsEngine.save();
+        }
+        if (data.bucketList && typeof BucketListEngine !== 'undefined') {
+          BucketListEngine.dreams = data.bucketList;
+          BucketListEngine.save();
+        }
+        if (data.focusSessions && typeof FocusEngine !== 'undefined') {
+          localStorage.setItem('tesseract_focus_sessions', JSON.stringify(data.focusSessions));
+        }
+        showToast('Complete Executive Database restored successfully! 🎉', 'success');
+      } else if (Array.isArray(data)) {
+        // Legacy Task Array
+        state.tasks = data;
+        saveData();
+        showToast(`Imported ${data.length} tasks successfully!`, 'success');
+      } else {
+        alert('Unrecognized JSON format. Please use a valid Tesseract export file.');
+        return;
+      }
+      renderAll();
+      if (document.getElementById('profile-container')) renderProfileView();
+    } catch (err) {
+      alert('Error parsing JSON backup file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function archiveCompletedTasks() {
+  const completedDailyAndWeekly = (state.tasks || []).filter(t => (t.tier === 'daily' || t.tier === 'weekly') && t.completed);
+  if (completedDailyAndWeekly.length === 0) {
+    showToast('No completed daily or weekly tasks to archive.', 'info');
+    return;
+  }
+
+  if (confirm(`Archive ${completedDailyAndWeekly.length} completed daily/weekly tasks? They will be cleared from active matrix while preserving all your XP and stats.`)) {
+    state.tasks = state.tasks.filter(t => !((t.tier === 'daily' || t.tier === 'weekly') && t.completed));
+    saveData();
+    renderAll();
+    if (document.getElementById('profile-container')) renderProfileView();
+    showToast(`Archived ${completedDailyAndWeekly.length} tasks! Matrix optimized. 🧹`, 'success');
+  }
+}
+
+function confirmResetData() {
+  resetToSampleData();
 }
 
 function getTimeAgo(date) {
@@ -2251,6 +2479,7 @@ function resetToSampleData() {
     state.tasks = typeof INITIAL_TASKS !== 'undefined' ? [...INITIAL_TASKS] : [];
     saveData();
     renderAll();
+    if (document.getElementById('profile-container')) renderProfileView();
     showToast('Restored sample data.', 'info');
   }
 }
