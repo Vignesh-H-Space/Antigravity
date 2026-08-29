@@ -212,6 +212,12 @@ const Components = {
         </div>
         ` : ''}
         
+        <!-- Command Palette Trigger Button -->
+        <button class="header-command-palette-btn" onclick="if(typeof CommandPalette !== 'undefined') CommandPalette.open();" title="Executive Command Palette (Ctrl+K)">
+          <i data-lucide="command"></i>
+          <span class="cmd-badge-text">Ctrl + K</span>
+        </button>
+
         <!-- Live Header XP & Rank Widget -->
         <div class="header-xp-pill" id="header-xp-pill" onclick="window.location.href='profile.html'" title="View Level, Badges & XP Profile">
           <span class="header-level-tag" id="header-level-badge">Lvl 1</span>
@@ -651,6 +657,30 @@ const Components = {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- ⚡ Executive Command Palette (Ctrl + K / Cmd + K) -->
+    <div class="modal-backdrop command-palette-backdrop" id="command-palette-modal" style="display: none;" onclick="if(event.target === this) CommandPalette.close();">
+      <div class="command-palette-card">
+        <div class="command-palette-header">
+          <div class="palette-search-wrapper">
+            <i data-lucide="search" class="palette-search-icon"></i>
+            <input type="text" id="palette-search-input" class="palette-search-input" placeholder="Type a command, search tasks, habits, or jump to page..." autocomplete="off" oninput="CommandPalette.handleSearch(this.value);" onkeydown="CommandPalette.handleKeyDown(event);" />
+            <button class="palette-esc-btn" onclick="CommandPalette.close();">ESC</button>
+          </div>
+        </div>
+        <div class="command-palette-body" id="palette-results-list">
+          <!-- Injected dynamically by CommandPalette.renderResults() -->
+        </div>
+        <div class="command-palette-footer">
+          <div class="palette-footer-shortcuts">
+            <span class="palette-shortcut-item"><kbd class="palette-kbd">↑</kbd><kbd class="palette-kbd">↓</kbd> Navigate</span>
+            <span class="palette-shortcut-item"><kbd class="palette-kbd">↵</kbd> Select</span>
+            <span class="palette-shortcut-item"><kbd class="palette-kbd">ESC</kbd> Close</span>
+          </div>
+          <span class="palette-brand-tag">TESSERACT OS</span>
+        </div>
       </div>
     </div>
 
