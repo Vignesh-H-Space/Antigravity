@@ -602,6 +602,58 @@ const Components = {
       </div>
     </div>
 
+    <!-- 🏛️ Personal Creed & Values Editor Modal -->
+    <div class="modal-backdrop" id="creed-editor-modal" style="display: none;">
+      <div class="ritual-modal-card" style="max-width: 580px;">
+        <div class="ritual-modal-header">
+          <div class="ritual-header-icon">🏛️</div>
+          <div>
+            <h3 class="ritual-modal-title">Personal North Star Creed</h3>
+            <p class="ritual-modal-sub">Define your mission, executive motto, and 3 core values.</p>
+          </div>
+          <button class="modal-close-btn" onclick="closeCreedModal();">&times;</button>
+        </div>
+        <form id="creed-editor-form" onsubmit="handleSaveCreed(event)">
+          <div class="ritual-modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="creed-input-mission">
+                <i data-lucide="compass" style="width: 14px; height: 14px; display: inline-block;"></i>
+                Life Mission & Execution Philosophy
+              </label>
+              <textarea id="creed-input-mission" class="form-textarea" rows="3" placeholder="What is your overarching purpose and life vision?" required style="width: 100%; border-radius: var(--radius-md); background: rgba(16,16,20,0.8); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.75rem; font-family: inherit; font-size: 0.95rem; resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="creed-input-motto">
+                <i data-lucide="zap" style="width: 14px; height: 14px; display: inline-block;"></i>
+                Executive Motto / Personal Mantra
+              </label>
+              <input type="text" id="creed-input-motto" class="form-input" placeholder="e.g. Discipline is freedom. Compound daily." required style="width: 100%; border-radius: var(--radius-md); background: rgba(16,16,20,0.8); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.65rem 0.75rem; font-family: inherit; font-size: 0.95rem;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i data-lucide="shield" style="width: 14px; height: 14px; display: inline-block;"></i>
+                3 Non-Negotiable Core Values
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <input type="text" id="creed-input-v1" class="form-input" placeholder="Core Value #1 (e.g. Ruthless Prioritization)" required style="width: 100%; border-radius: var(--radius-md); background: rgba(16,16,20,0.8); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.55rem 0.75rem; font-family: inherit; font-size: 0.9rem;">
+                <input type="text" id="creed-input-v2" class="form-input" placeholder="Core Value #2 (e.g. Deep Work Intensity)" required style="width: 100%; border-radius: var(--radius-md); background: rgba(16,16,20,0.8); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.55rem 0.75rem; font-family: inherit; font-size: 0.9rem;">
+                <input type="text" id="creed-input-v3" class="form-input" placeholder="Core Value #3 (e.g. Unwavering Follow-Through)" required style="width: 100%; border-radius: var(--radius-md); background: rgba(16,16,20,0.8); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.55rem 0.75rem; font-family: inherit; font-size: 0.9rem;">
+              </div>
+            </div>
+          </div>
+          <div class="ritual-modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeCreedModal();">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="check"></i>
+              <span>Save Creed</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Floating XP Burst Animation Container -->
     <div class="xp-burst-container" id="xp-burst-container"></div>
 
