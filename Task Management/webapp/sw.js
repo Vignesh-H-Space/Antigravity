@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tesseract-pwa-v2';
+const CACHE_NAME = 'tesseract-pwa-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS_TO_CACHE = [
   './analytics.html',
   './bucketlist.html',
   './profile.html',
+  './report.html',
   './manifest.json',
   './css/styles.css',
   './js/app.js',
@@ -20,6 +21,7 @@ const ASSETS_TO_CACHE = [
   './js/bucketlist_engine.js',
   './js/alignment_engine.js',
   './js/roadmap_engine.js',
+  './js/report_engine.js',
   './icons/icon-192.svg',
   './icons/icon-512.svg'
 ];

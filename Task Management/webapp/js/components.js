@@ -24,6 +24,7 @@ const Components = {
     const isAnalytics = page === 'analytics';
     const isRoadmap = page === 'roadmap';
     const isBucketlist = page === 'bucketlist';
+    const isReport = page === 'report';
 
     const sidebarHTML = `
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="Components.closeMobileSidebar()"></div>
@@ -104,9 +105,9 @@ const Components = {
           <i data-lucide="bar-chart-3"></i>
           <span>Productivity Metrics</span>
         </button>
-        <button class="nav-item" id="btn-view-report" onclick="Components.closeMobileSidebar(); if(typeof WeeklyReportEngine !== 'undefined') WeeklyReportEngine.open();" title="Generate Executive Weekly Debrief">
+        <button class="nav-item ${isReport ? 'active' : ''}" id="btn-view-report" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='report') window.location.href='report.html';" title="Executive Intelligence & Debrief Reports">
           <i data-lucide="file-text"></i>
-          <span>Weekly Report</span>
+          <span>Executive Reports</span>
         </button>
       </nav>
 

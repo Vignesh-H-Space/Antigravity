@@ -78,6 +78,8 @@ function init() {
       headerConfig = { title: '12-Month Horizon Timeline', subtitle: 'Interactive Gantt roadmap connecting annual & quarterly goals to deadlines.', showSearch: false };
     } else if (page === 'bucketlist') {
       headerConfig = { title: "Life's Bucket List", subtitle: 'Lifetime dreams, epic adventures, and summit ambitions.', showSearch: false };
+    } else if (page === 'report') {
+      headerConfig = { title: 'Executive Intelligence & Reports', subtitle: 'Multi-cadence debriefs, SVG velocity charts, habit heatmaps, and strategic synthesis.', showSearch: false };
     } else if (page === 'profile') {
       headerConfig = { title: 'Your Profile', subtitle: 'Stats, badges, and activity history.', showSearch: false };
     }
@@ -92,6 +94,7 @@ function init() {
   if (typeof RoadmapEngine !== 'undefined') RoadmapEngine.init();
   if (typeof RitualsEngine !== 'undefined') RitualsEngine.init();
   if (typeof BucketListEngine !== 'undefined') BucketListEngine.init();
+  if (typeof ReportEngine !== 'undefined') ReportEngine.init();
   renderAll();
   renderStreakUI();
   lucide.createIcons();
@@ -1054,6 +1057,8 @@ function renderAll() {
     if (typeof RoadmapEngine !== 'undefined') RoadmapEngine.render();
   } else if (page === 'bucketlist') {
     if (typeof BucketListEngine !== 'undefined') BucketListEngine.render();
+  } else if (page === 'report') {
+    if (typeof ReportEngine !== 'undefined') ReportEngine.render();
   } else if (page === 'profile') {
     renderProfileView();
   }
