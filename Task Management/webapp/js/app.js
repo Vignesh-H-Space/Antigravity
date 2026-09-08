@@ -3673,17 +3673,7 @@ const WeeklyReportEngine = {
   },
 
   open() {
-    const modal = document.getElementById('weekly-report-modal');
-    const body = document.getElementById('weekly-report-body');
-    const dateRangeEl = document.getElementById('report-modal-daterange');
-    if (!modal || !body) return;
-
-    const data = this.getReportData();
-    if (dateRangeEl) dateRangeEl.textContent = `Debrief for ${data.dateRangeStr}`;
-    body.innerHTML = this.generateHTMLPreview();
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    window.location.href = 'report.html';
   },
 
   close() {

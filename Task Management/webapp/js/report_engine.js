@@ -885,25 +885,3 @@ const ReportEngine = {
   }
 };
 
-// Backwards compatibility bridge for any existing callers of WeeklyReportEngine
-const WeeklyReportEngine = {
-  open() {
-    window.location.href = 'report.html';
-  },
-  close() {
-    const modal = document.getElementById('weekly-report-modal');
-    if (modal) modal.style.display = 'none';
-  },
-  generateMarkdown() {
-    return ReportEngine.generateMarkdown();
-  },
-  downloadMarkdown() {
-    ReportEngine.downloadMarkdown();
-  },
-  copyMarkdown() {
-    ReportEngine.copyMarkdown();
-  },
-  printReport() {
-    ReportEngine.printReport();
-  }
-};
