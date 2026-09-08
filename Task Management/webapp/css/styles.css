@@ -8932,4 +8932,57 @@ body {
   }
 }
 
+/* ── Analytics Report Banner ── */
+.analytics-report-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.5) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.analytics-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.analytics-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.analytics-banner-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.analytics-banner-title {
+  font-family: var(--font-heading);
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.analytics-banner-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 560px;
+}
+
+
 
