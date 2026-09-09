@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tesseract-pwa-v4';
+const CACHE_NAME = 'tesseract-pwa-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -23,7 +23,12 @@ const ASSETS_TO_CACHE = [
   './js/roadmap_engine.js',
   './js/report_engine.js',
   './icons/icon-192.svg',
-  './icons/icon-512.svg'
+  './icons/icon-512.svg',
+  './icons/shortcut-task.svg',
+  './icons/shortcut-today.svg',
+  './icons/shortcut-report.svg',
+  './icons/shortcut-analytics.svg',
+  './icons/shortcut-roadmap.svg'
 ];
 
 // Install Event - Cache Core Assets

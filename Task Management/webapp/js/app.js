@@ -57,9 +57,10 @@ function init() {
   loadStreak();
   loadProfile();
 
-  // Read URL parameters on index.html (e.g. ?horizon=daily)
+  // Read URL parameters on index.html (e.g. ?horizon=daily or ?action=new-task)
   const urlParams = new URLSearchParams(window.location.search);
   const horizonParam = urlParams.get('horizon');
+  const actionParam = urlParams.get('action');
   if (horizonParam && ['general', 'daily', 'weekly', 'monthly', 'quarterly', 'annual', 'all'].includes(horizonParam)) {
     state.activeHorizon = horizonParam;
   }
@@ -98,6 +99,24 @@ function init() {
   renderAll();
   renderStreakUI();
   lucide.createIcons();
+
+  // Handle Quick Action shortcuts from PWA manifest or launcher links
+  if (actionParam) {
+    handleQuickActionShortcut(actionParam, horizonParam);
+  }
+}
+
+function handleQuickActionShortcut(action, horizon) {
+  setTimeout(() => {
+    if (action === 'new-task' || action === 'add-task' || action === 'add') {
+      const targetTier = horizon && ['daily', 'weekly', 'monthly', 'quarterly', 'annual'].includes(horizon) ? horizon : 'daily';
+      openAddModal(targetTier);
+    } else if (action === 'morning' && typeof RitualsEngine !== 'undefined') {
+      RitualsEngine.openMorningModal();
+    } else if (action === 'evening' && typeof RitualsEngine !== 'undefined') {
+      RitualsEngine.openEveningModal();
+    }
+  }, 250);
 }
 
 function loadData() {
