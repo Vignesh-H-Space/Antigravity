@@ -685,6 +685,17 @@ const Components = {
       </div>
     </div>
 
+    <!-- Pull-to-Refresh Indicator Container -->
+    <div id="ptr-indicator" class="ptr-indicator" aria-hidden="true">
+      <div class="ptr-inner">
+        <svg class="ptr-arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+        <div class="ptr-spinner"></div>
+      </div>
+    </div>
+
     <!-- Floating XP Burst Animation Container -->
     <div class="xp-burst-container" id="xp-burst-container"></div>
 
@@ -693,6 +704,10 @@ const Components = {
     `;
 
     document.body.insertAdjacentHTML('beforeend', extraHTML);
+
+    if (typeof TouchEngine !== 'undefined') {
+      TouchEngine.init();
+    }
   }
 };
 
