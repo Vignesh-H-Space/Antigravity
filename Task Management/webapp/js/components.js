@@ -189,6 +189,33 @@ const Components = {
   },
 
   /**
+   * Toggle Mobile Tools & Executive Suite Bottom Sheet
+   */
+  toggleMobileToolsSheet() {
+    const sheet = document.getElementById('mobile-tools-sheet');
+    if (!sheet) return;
+    const isShowing = sheet.style.display !== 'none';
+    if (isShowing) {
+      this.closeMobileToolsSheet();
+    } else {
+      sheet.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  },
+
+  /**
+   * Close Mobile Tools Bottom Sheet
+   */
+  closeMobileToolsSheet() {
+    const sheet = document.getElementById('mobile-tools-sheet');
+    if (sheet) {
+      sheet.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  },
+
+  /**
    * Render Top Header into #header-mount or main-content
    */
   renderHeader({ title = 'All Goals & Tasks', subtitle = 'Holistic overview across all 5 strategic horizons.', showSearch = true } = {}) {
