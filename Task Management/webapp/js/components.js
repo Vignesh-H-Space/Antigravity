@@ -279,10 +279,14 @@ const Components = {
    * Render Task Modal, Focus Overlay, and Toast Container at the bottom of the body
    */
   renderModalAndToasts() {
+    const page = this.getCurrentPage();
     const extraHTML = `
     <!-- Add / Edit Task Modal -->
     <div class="modal-backdrop" id="task-modal" style="display: none;">
       <div class="modal-card">
+        <div class="sheet-grabber-bar" onclick="closeModal();">
+          <div class="sheet-grabber-pill"></div>
+        </div>
         <div class="modal-header">
           <h3 class="modal-title" id="modal-title-text">Create Goal / Task</h3>
           <button class="modal-close-btn" id="modal-close-btn">&times;</button>
