@@ -506,6 +506,9 @@ const Components = {
     <!-- 🌅 Morning Priming Modal (The Rule of 3) -->
     <div class="modal-backdrop" id="morning-priming-modal" style="display: none;">
       <div class="ritual-modal-card">
+        <div class="sheet-grabber-bar" onclick="RitualsEngine.closeModals();">
+          <div class="sheet-grabber-pill"></div>
+        </div>
         <div class="ritual-modal-header">
           <div class="ritual-header-icon">🌅</div>
           <div>
@@ -532,6 +535,9 @@ const Components = {
     <!-- 🌙 Evening Shutdown Protocol Modal -->
     <div class="modal-backdrop" id="evening-shutdown-modal" style="display: none;">
       <div class="ritual-modal-card evening-modal">
+        <div class="sheet-grabber-bar" onclick="RitualsEngine.closeModals();">
+          <div class="sheet-grabber-pill"></div>
+        </div>
         <div class="ritual-modal-header">
           <div class="ritual-header-icon">🌙</div>
           <div>
@@ -584,6 +590,9 @@ const Components = {
     <!-- 🌐 Strategic Alignment Linker Modal -->
     <div class="modal-backdrop" id="link-parent-modal" style="display: none;">
       <div class="ritual-modal-card parent-linker-card">
+        <div class="sheet-grabber-bar" onclick="AlignmentEngine.closeModal();">
+          <div class="sheet-grabber-pill"></div>
+        </div>
         <div class="ritual-modal-header">
           <div class="ritual-header-icon">🌐</div>
           <div>
