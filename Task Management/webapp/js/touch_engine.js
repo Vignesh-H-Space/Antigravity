@@ -51,6 +51,7 @@ const TouchEngine = {
     // Bind touch events
     this.bindPullToRefresh();
     this.bindSwipeNavigation();
+    this.bindModalSheetGestures();
   },
 
   /**
@@ -408,6 +409,47 @@ const TouchEngine = {
     return !!el.closest(
       '.kanban-board-container, .kanban-board, .kanban-column-body, .timeline-matrix-container, .heatmap-matrix-table, .progress-summary-grid'
     );
+  },
+
+  /**
+   * Mobile Bottom Sheet Touch Gestures (Swipe down on grabber bar to dismiss)
+   */
+  bindModalSheetGestures() {
+    let sheetStartY = 0;
+    let activeSheet = null;
+
+    document.addEventListener('touchstart', (e) => {
+      const grabber = e.target.closest('.sheet-grabber-bar, .sheet-grabber-pill');
+      if (grabber) {
+        const modal = grabber.closest('.modal-backdrop');
+        if (modal && modal.style.display !== 'none') {
+          sheetStartY = e.touches[0].clientY;
+          activeSheet = modal;
+        }
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      if (!activeSheet) return;
+      const endY = e.changedTouches[0].clientY;
+      const deltaY = endY - sheetStartY;
+      if (deltaY > 45) {
+        // Dragged down to dismiss
+        if (activeSheet.id === 'task-modal') {
+          if (typeof closeModal === 'function') closeModal();
+        } else if (activeSheet.id === 'mobile-tools-sheet') {
+          if (typeof Components !== 'undefined') Components.closeMobileToolsSheet();
+        } else if (activeSheet.id === 'morning-priming-modal' || activeSheet.id === 'evening-shutdown-modal') {
+          if (typeof RitualsEngine !== 'undefined') RitualsEngine.closeModals();
+        } else if (activeSheet.id === 'link-parent-modal') {
+          if (typeof AlignmentEngine !== 'undefined') AlignmentEngine.closeModal();
+        } else {
+          activeSheet.style.display = 'none';
+        }
+        if (navigator.vibrate) navigator.vibrate(20);
+      }
+      activeSheet = null;
+    }, { passive: true });
   }
 };
 

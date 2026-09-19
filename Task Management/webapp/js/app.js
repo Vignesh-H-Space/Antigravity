@@ -100,6 +100,8 @@ function init() {
   renderAll();
   renderStreakUI();
   lucide.createIcons();
+  initPwaInstallPrompt();
+  updateAppBadge();
 
   // Handle Quick Action shortcuts from PWA manifest or launcher links
   if (actionParam) {
@@ -137,6 +139,7 @@ function loadData() {
 
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+  updateAppBadge();
 }
 
 function loadProfile() {
@@ -1091,6 +1094,7 @@ function renderAll() {
     AlignmentEngine.renderAlignmentUI();
   }
 
+  updateAppBadge();
   lucide.createIcons();
 }
 
@@ -2792,6 +2796,28 @@ const FocusEngine = {
   soundNodes: null,
   currentSound: 'rain',
   volume: 0.5,
+  wakeLock: null,
+
+  async requestWakeLock() {
+    if ('wakeLock' in navigator) {
+      try {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+        this.wakeLock.addEventListener('release', () => {
+          this.wakeLock = null;
+        });
+      } catch (e) {
+        console.warn('Screen Wake Lock could not be obtained:', e);
+      }
+    }
+  },
+
+  releaseWakeLock() {
+    if (this.wakeLock) {
+      this.wakeLock.release().then(() => {
+        this.wakeLock = null;
+      }).catch(() => {});
+    }
+  },
 
   init() {
     // Preset buttons
@@ -3009,6 +3035,7 @@ const FocusEngine = {
 
   close() {
     this.pause();
+    this.releaseWakeLock();
     this.stopAudio();
     const overlay = document.getElementById('focus-mode-overlay');
     if (overlay) overlay.style.display = 'none';
@@ -3063,6 +3090,7 @@ const FocusEngine = {
   start() {
     if (this.isRunning) return;
     this.isRunning = true;
+    this.requestWakeLock();
 
     const statusEl = document.getElementById('focus-time-status');
     if (statusEl) statusEl.textContent = 'IN FLOW';
@@ -3091,6 +3119,7 @@ const FocusEngine = {
 
   pause() {
     this.isRunning = false;
+    this.releaseWakeLock();
     clearInterval(this.timerInterval);
     this.timerInterval = null;
 
@@ -3729,6 +3758,122 @@ const WeeklyReportEngine = {
     window.print();
   }
 };
+
+// ── 📱 Mobile Application Enhancements ─────────────────────────
+
+/**
+ * App Icon Badge API (navigator.setAppBadge)
+ * Sets the badge on the device home screen showing open Daily Goals
+ */
+function updateAppBadge() {
+  if ('setAppBadge' in navigator) {
+    const dailyOpen = state.tasks ? state.tasks.filter(t => t.tier === 'daily' && !t.completed).length : 0;
+    if (dailyOpen > 0) {
+      navigator.setAppBadge(dailyOpen).catch(() => {});
+    } else if ('clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }
+}
+
+/**
+ * Native Web Share API (navigator.share)
+ * Shares executive debrief with native iOS / Android share sheet
+ */
+function shareExecutiveReport() {
+  const dailyTasks = state.tasks ? state.tasks.filter(t => t.tier === 'daily') : [];
+  const dailyDone = dailyTasks.filter(t => t.completed).length;
+  const streak = state.streak ? state.streak.count : 0;
+  const xp = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.xp : 0;
+
+  const shareText = `🏛️ TESSERACT EXECUTIVE DEBRIEF\n` +
+    `⚡ Execution Velocity: ${dailyDone}/${dailyTasks.length} Daily Goals Cleared\n` +
+    `🔥 Current Streak: ${streak} Days\n` +
+    `🏆 Executive XP: ${xp} XP\n` +
+    `Unified multi-horizon alignment across Daily, Weekly & Annual horizons.`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: 'Tesseract Executive Debrief',
+      text: shareText,
+      url: window.location.href
+    }).catch((err) => {
+      if (err.name !== 'AbortError') {
+        copyShareFallback(shareText);
+      }
+    });
+  } else {
+    copyShareFallback(shareText);
+  }
+}
+
+function copyShareFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 Executive Debrief copied to clipboard!', 'success');
+    }).catch(() => {
+      prompt('Copy Executive Debrief:', text);
+    });
+  } else {
+    prompt('Copy Executive Debrief:', text);
+  }
+}
+
+/**
+ * PWA Smart Install Prompt Engine
+ */
+let deferredPwaPrompt = null;
+
+function initPwaInstallPrompt() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) return;
+
+  const isDismissed = localStorage.getItem('tesseract_pwa_dismissed');
+  const banner = document.getElementById('pwa-install-banner');
+  const desc = document.getElementById('pwa-install-desc');
+
+  // Android Chrome / Desktop beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    if (banner && !isDismissed) {
+      banner.style.display = 'flex';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  });
+
+  // iOS Safari detection
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome') && !navigator.userAgent.includes('CriOS');
+  if (isIOS && isSafari && !isStandalone && !isDismissed && banner) {
+    if (desc) desc.textContent = 'Tap Share ⎋ then "Add to Home Screen" ➕';
+    const installBtn = document.getElementById('btn-pwa-install');
+    if (installBtn) installBtn.style.display = 'none';
+    banner.style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+function triggerPwaInstall() {
+  if (deferredPwaPrompt) {
+    deferredPwaPrompt.prompt();
+    deferredPwaPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        showToast('🚀 Installing Tesseract Executive App...', 'success');
+      }
+      dismissPwaInstall();
+      deferredPwaPrompt = null;
+    });
+  } else {
+    showToast('Add to Home Screen from your browser menu.', 'info');
+  }
+}
+
+function dismissPwaInstall() {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('tesseract_pwa_dismissed', Date.now().toString());
+}
 
 // Start application on DOM load
 document.addEventListener('DOMContentLoaded', init);
