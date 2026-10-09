@@ -27,6 +27,8 @@ const Components = {
     const isBacklogs = page === 'backlogs' || page === 'completed_backlogs';
     const isPulse = page === 'pulse';
     const isReport = page === 'report';
+    const isProfessional = page === 'professional';
+    const isTracker = page === 'tracker';
 
     const sidebarHTML = `
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="Components.closeMobileSidebar()"></div>
@@ -78,9 +80,9 @@ const Components = {
             <span>Quarterly Goals</span>
             <span class="badge" id="badge-quarterly">0</span>
           </button>
-          <button class="nav-item ${isHome && activeHorizon === 'annual' ? 'active' : ''}" data-horizon="annual" id="tab-annual" onclick="Components.closeMobileSidebar()" title="Annual Vision">
+          <button class="nav-item ${isHome && activeHorizon === 'annual' ? 'active' : ''}" data-horizon="annual" id="tab-annual" onclick="Components.closeMobileSidebar()" title="Annual Goals">
             <span class="nav-emoji">🏆</span>
-            <span>Annual Vision</span>
+            <span>Annual Goals</span>
             <span class="badge" id="badge-annual">0</span>
           </button>
           <button class="nav-item ${isHome && activeHorizon === 'all' ? 'active' : ''}" data-horizon="all" id="tab-all" onclick="Components.closeMobileSidebar()" title="All 5 Horizons">
@@ -123,6 +125,14 @@ const Components = {
           <button class="nav-item ${isReport ? 'active' : ''}" id="btn-view-report" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='report') window.location.href='report.html';" title="Executive Reports">
             <i data-lucide="file-text"></i>
             <span>Executive Reports</span>
+          </button>
+          <button class="nav-item ${isProfessional ? 'active' : ''}" id="btn-view-professional" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='professional') window.location.href='professional.html';" title="Professional Journal">
+            <i data-lucide="briefcase"></i>
+            <span>Professional</span>
+          </button>
+          <button class="nav-item ${isTracker ? 'active' : ''}" id="btn-view-tracker" onclick="Components.closeMobileSidebar(); if(Components.getCurrentPage()!=='tracker') window.location.href='tracker.html';" title="Cadence & Routine Tracker">
+            <i data-lucide="calendar-clock"></i>
+            <span>Tracker</span>
           </button>
         </nav>
 
@@ -354,7 +364,7 @@ const Components = {
               <option value="weekly">📅 Weekly Milestone (This Week)</option>
               <option value="monthly">🗓️ Monthly Goal (This Month)</option>
               <option value="quarterly">🎯 Quarterly Goal (90-Day Objective)</option>
-              <option value="annual">🏆 Annual Vision (Yearly Goal)</option>
+              <option value="annual">🏆 Annual Goals (Yearly Target)</option>
             </select>
           </div>
 
@@ -649,7 +659,7 @@ const Components = {
           <div class="ritual-header-icon">🌐</div>
           <div>
             <h3 class="ritual-modal-title">Bridge to Strategic North Star</h3>
-            <p class="ritual-modal-sub">Link this task to an Annual Vision, Quarterly Objective, or Milestone.</p>
+            <p class="ritual-modal-sub">Link this task to an Annual Goal, Quarterly Objective, or Milestone.</p>
           </div>
           <button class="modal-close-btn" onclick="AlignmentEngine.closeModal();">&times;</button>
         </div>
@@ -1063,6 +1073,10 @@ const Components = {
             <div class="tool-tile-icon rose"><i data-lucide="activity"></i></div>
             <span class="tool-tile-label">Pulse</span>
           </button>
+          <button class="tool-tile ${page === 'tracker' ? 'active' : ''}" onclick="Components.closeMobileToolsSheet(); window.location.href='tracker.html';">
+            <div class="tool-tile-icon amber"><i data-lucide="calendar-clock"></i></div>
+            <span class="tool-tile-label">Tracker</span>
+          </button>
           ${(() => {
             try {
               const raw = localStorage.getItem('tesseract_backlog_data');
@@ -1135,7 +1149,7 @@ const Components = {
         <i data-lucide="file-text"></i>
         <span>Reports</span>
       </button>
-      <button class="bottom-nav-item ${['analytics', 'cascade', 'bucketlist', 'profile', 'backlogs', 'completed_backlogs', 'pulse'].includes(page) ? 'active' : ''}" onclick="Components.toggleMobileToolsSheet()" aria-label="Tools">
+      <button class="bottom-nav-item ${['analytics', 'cascade', 'bucketlist', 'profile', 'backlogs', 'completed_backlogs', 'pulse', 'professional', 'tracker'].includes(page) ? 'active' : ''}" onclick="Components.toggleMobileToolsSheet()" aria-label="Tools">
         <i data-lucide="grid"></i>
         <span>Tools</span>
       </button>
