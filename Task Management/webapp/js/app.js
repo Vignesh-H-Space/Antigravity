@@ -28,7 +28,7 @@ const TIERS = [
   { id: 'weekly', name: 'Weekly Milestones', emoji: '📅', color: '#8b5cf6', desc: 'Tactical milestones for this week' },
   { id: 'monthly', name: 'Monthly Goals', emoji: '🗓️', color: '#10b981', desc: 'Deliverables and focus areas for this month' },
   { id: 'quarterly', name: 'Quarterly Goals', emoji: '🎯', color: '#06b6d4', desc: '90-day objectives & key strategic results' },
-  { id: 'annual', name: 'Annual Vision', emoji: '🏆', color: '#f43f5e', desc: 'North star pillars & yearly ambitions' }
+  { id: 'annual', name: 'Annual Goals', emoji: '🏆', color: '#f43f5e', desc: 'North star pillars & yearly targets' }
 ];
 
 let state = {
@@ -39,7 +39,9 @@ let state = {
   priorityFilter: 'all',
   searchQuery: '',
   editingTaskId: null,
-  viewMode: 'list', // 'list' | 'eisenhower'
+  viewMode: (typeof localStorage !== 'undefined' && localStorage.getItem('tesseract_view_mode')) || 'list', // 'list' | 'eisenhower' | 'kanban'
+  kanbanColumnFilter: 'all', // 'all' | 'backlog' | 'todo' | 'in_progress' | 'done'
+  showArchivedDone: false,
   profile: {
     name: 'Tesseract User',
     image: null
@@ -72,7 +74,7 @@ function init() {
     
     let headerConfig = { title: 'Executive Command Center', subtitle: 'Unified multi-horizon cockpit & execution launchpad.', showSearch: true };
     if (page === 'cascade') {
-      headerConfig = { title: 'Strategic Goal Cascade', subtitle: 'Multi-horizon vertical alignment linking daily actions to annual vision.', showSearch: false };
+      headerConfig = { title: 'Strategic Goal Cascade', subtitle: 'Multi-horizon vertical alignment linking daily actions to annual goals.', showSearch: false };
     } else if (page === 'analytics') {
       headerConfig = { title: 'Productivity & Goal Analytics', subtitle: 'Comprehensive metric tracking and horizon performance.', showSearch: false };
     } else if (page === 'roadmap') {
@@ -89,6 +91,10 @@ function init() {
       headerConfig = { title: 'Executive Intelligence & Reports', subtitle: 'Multi-cadence debriefs, SVG velocity charts, habit heatmaps, and strategic synthesis.', showSearch: false };
     } else if (page === 'profile') {
       headerConfig = { title: 'Your Profile', subtitle: 'Stats, badges, and activity history.', showSearch: false };
+    } else if (page === 'professional') {
+      headerConfig = { title: 'Professional Journal', subtitle: 'Living career timeline, dynamic resume, and professional milestone tracker.', showSearch: false };
+    } else if (page === 'tracker') {
+      headerConfig = { title: 'Routine & Cadence Tracker', subtitle: 'Multi-date rolling tracker for grooming, maintenance, hygiene & habits.', showSearch: false };
     }
     Components.renderHeader(headerConfig);
     Components.renderModalAndToasts();
@@ -102,12 +108,21 @@ function init() {
   if (typeof RitualsEngine !== 'undefined') RitualsEngine.init();
   if (typeof BucketListEngine !== 'undefined') BucketListEngine.init();
   if (typeof BacklogEngine !== 'undefined') BacklogEngine.init();
+  if (typeof HorizonBridge !== 'undefined') HorizonBridge.init();
   if (typeof DocketEngine !== 'undefined') DocketEngine.init();
   if (typeof ReportEngine !== 'undefined') ReportEngine.init();
   if (typeof TouchEngine !== 'undefined') TouchEngine.init();
   if (typeof SyncEngine !== 'undefined') SyncEngine.init();
   if (typeof NotificationEngine !== 'undefined') NotificationEngine.init();
-  renderAll();
+  if (typeof ProfessionalEngine !== 'undefined') ProfessionalEngine.init();
+  if (typeof TrackerEngine !== 'undefined') TrackerEngine.init();
+
+  if (page === 'index' && state.viewMode && state.viewMode !== 'list') {
+    switchView(state.viewMode);
+  } else {
+    renderAll();
+  }
+
   renderStreakUI();
   lucide.createIcons();
   initPwaInstallPrompt();
@@ -149,6 +164,11 @@ function loadData() {
   } else if (typeof INITIAL_TASKS !== 'undefined') {
     state.tasks = [...INITIAL_TASKS];
     saveData();
+  }
+
+  // Ensure Backlog items are fresh and merged into state.tasks
+  if (typeof HorizonBridge !== 'undefined' && typeof HorizonBridge.syncAll === 'function') {
+    HorizonBridge.syncAll();
   }
 }
 
@@ -346,8 +366,12 @@ function renderStreakUI() {
 const ACCENT_KEY = 'horizon_accent';
 
 function loadTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
+  if (typeof Components !== 'undefined' && typeof Components.initTheme === 'function') {
+    Components.initTheme();
+  } else {
+    const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem('tesseract_goals_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+  }
   const savedAccent = localStorage.getItem(ACCENT_KEY);
   if (savedAccent) {
     document.documentElement.setAttribute('data-accent', savedAccent);
@@ -355,10 +379,15 @@ function loadTheme() {
 }
 
 function toggleTheme() {
+  if (typeof Components !== 'undefined' && typeof Components.toggleTheme === 'function') {
+    Components.toggleTheme();
+    return;
+  }
   const current = document.documentElement.getAttribute('data-theme') || 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem(THEME_KEY, next);
+  localStorage.setItem('tesseract_goals_theme', next);
 }
 
 function setAccent(accent) {
@@ -809,6 +838,52 @@ function toggleTaskCompletion(taskId, clickEvent = null) {
   task.completedAt = task.completed ? new Date().toISOString() : null;
   saveData();
 
+  // Bi-directional synchronization with HorizonBridge / BacklogEngine
+  if (typeof HorizonBridge !== 'undefined' && typeof HorizonBridge.syncHorizonTaskToBacklog === 'function') {
+    HorizonBridge.syncHorizonTaskToBacklog(task);
+  } else if (task.backlogId || (task.id && task.id.startsWith('task_bkl_'))) {
+    try {
+      const bklId = task.backlogId || task.id.replace('task_bkl_', '');
+      const raw = localStorage.getItem('tesseract_backlog_data');
+      if (raw) {
+        const bkls = JSON.parse(raw);
+        const b = bkls.find(x => x.id === bklId);
+        if (b) {
+          b.completed = task.completed;
+          b.completedAt = task.completedAt;
+          b.kanbanStatus = task.completed ? 'done' : (task.kanbanStatus || 'backlog');
+          localStorage.setItem('tesseract_backlog_data', JSON.stringify(bkls));
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Bi-directional synchronization with Today's Docket
+  if (typeof DocketEngine !== 'undefined') {
+    if (Array.isArray(DocketEngine.items)) {
+      const dktItem = DocketEngine.items.find(x => x.id === task.id || x.backlogId === task.backlogId || (task.backlogId && x.id === task.backlogId) || x.task === task.title);
+      if (dktItem) {
+        dktItem.completed = task.completed;
+        dktItem.completedAt = task.completedAt;
+        if (typeof DocketEngine.save === 'function') DocketEngine.save();
+        if (typeof DocketEngine.render === 'function') DocketEngine.render();
+      }
+    }
+  } else {
+    try {
+      const raw = localStorage.getItem('tesseract_docket_today_items');
+      if (raw) {
+        const dktItems = JSON.parse(raw);
+        const d = dktItems.find(x => x.id === task.id || x.backlogId === task.backlogId || (task.backlogId && x.id === task.backlogId) || x.task === task.title);
+        if (d) {
+          d.completed = task.completed;
+          d.completedAt = task.completedAt;
+          localStorage.setItem('tesseract_docket_today_items', JSON.stringify(dktItems));
+        }
+      }
+    } catch (e) {}
+  }
+
   if (task.completed) {
     triggerConfetti();
     
@@ -848,6 +923,10 @@ function toggleTaskCompletion(taskId, clickEvent = null) {
   }
 
   renderAll();
+}
+
+if (typeof window !== 'undefined') {
+  window.toggleTaskCompletion = toggleTaskCompletion;
 }
 
 // Delete Task
@@ -1015,7 +1094,7 @@ const EXECUTIVE_PRINCIPLES = [
   {
     category: "NORTH STAR ALIGNMENT",
     emoji: "🧭",
-    quote: "If a daily action doesn't bridge toward your Annual Vision or Quarterly summit, question why it exists on your agenda.",
+    quote: "If a daily action doesn't bridge toward your Annual Goals or Quarterly summit, question why it exists on your agenda.",
     author: "Tesseract Operating Creed"
   },
   {
@@ -1102,7 +1181,13 @@ function renderAll() {
     syncHorizonUI();
     updateHeaderTitle();
     updateProgressCards();
-    renderTaskList();
+    if (state.viewMode === 'eisenhower') {
+      renderEisenhowerMatrix();
+    } else if (state.viewMode === 'kanban') {
+      renderKanbanBoard();
+    } else {
+      renderTaskList();
+    }
     if (typeof HabitsEngine !== 'undefined') HabitsEngine.renderWidget();
     if (typeof RitualsEngine !== 'undefined') RitualsEngine.renderMorningBanner();
   } else if (page === 'cascade') {
@@ -1116,6 +1201,8 @@ function renderAll() {
     if (typeof BucketListEngine !== 'undefined') BucketListEngine.render();
   } else if (page === 'report') {
     if (typeof ReportEngine !== 'undefined') ReportEngine.render();
+  } else if (page === 'professional') {
+    if (typeof ProfessionalEngine !== 'undefined') ProfessionalEngine.render();
   } else if (page === 'profile') {
     renderProfileView();
   }
@@ -1439,6 +1526,9 @@ function toggleViewMode() {
 
 function switchView(mode) {
   state.viewMode = mode;
+  try {
+    localStorage.setItem('tesseract_view_mode', mode);
+  } catch (e) {}
   const listBtn = document.getElementById('view-mode-list');
   const matrixBtn = document.getElementById('view-mode-matrix');
   const kanbanBtn = document.getElementById('view-mode-kanban');
@@ -1604,10 +1694,14 @@ const KANBAN_COLUMNS = [
 function getKanbanStatus(task) {
   if (task.completed) return 'done';
   if (task.kanbanStatus) return task.kanbanStatus;
+  // Executive Backlogs and General horizon items cleanly default to the 'backlog' column
+  if (task.backlogId || task.isBacklog || task.tier === 'general') return 'backlog';
   // Auto-classify based on existing data
   if (task.priority === 'low' && !task.dueDate) return 'backlog';
   return 'todo';
 }
+
+window._recentlyDeletedTasks = window._recentlyDeletedTasks || {};
 
 function moveTaskToKanban(taskId, columnId, event) {
   if (event) event.stopPropagation();
@@ -1617,33 +1711,155 @@ function moveTaskToKanban(taskId, columnId, event) {
   if (columnId === 'done') {
     task.completed = true;
     task.kanbanStatus = 'done';
+    task.completedAt = task.completedAt || new Date().toISOString();
     // Award XP
     if (typeof XPEngine !== 'undefined') {
       XPEngine.awardXP(task);
     }
   } else {
     task.completed = false;
+    task.completedAt = null;
     task.kanbanStatus = columnId;
+  }
+
+  // Bi-directional sync back to Executive Backlogs if linked
+  if (task.backlogId && typeof HorizonBridge !== 'undefined' && typeof HorizonBridge.syncHorizonTaskToBacklog === 'function') {
+    HorizonBridge.syncHorizonTaskToBacklog(task);
   }
 
   saveData();
   renderKanbanBoard();
   const col = KANBAN_COLUMNS.find(c => c.id === columnId);
-  if (typeof showToast === 'function' && col) {
+
+  if (columnId === 'done') {
+    // Show 10s revive toast option on moving to Done
+    if (typeof showActionToast === 'function') {
+      showActionToast(`✅ Completed "${task.title.substring(0, 24)}..."`, 'Delete Now 🗑️', () => {
+        deleteTaskWithRevive(task.id, 10);
+      }, 10000);
+    } else if (typeof showToast === 'function') {
+      showToast(`✅ Moved to Done`, 'success');
+    }
+  } else if (typeof showToast === 'function' && col) {
     showToast(`${col.emoji} Moved to ${col.label}`, 'info');
   }
+}
+
+function deleteTaskWithRevive(taskId, seconds = 10, event = null) {
+  if (event) event.stopPropagation();
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // Stash in recently deleted
+  const backupTask = JSON.parse(JSON.stringify(task));
+  window._recentlyDeletedTasks[taskId] = {
+    task: backupTask,
+    timeoutId: setTimeout(() => {
+      delete window._recentlyDeletedTasks[taskId];
+    }, seconds * 1000)
+  };
+
+  // Remove from state
+  state.tasks = state.tasks.filter(t => t.id !== taskId);
+  saveData();
+
+  // If linked to backlog, sync
+  if (task.backlogId && typeof HorizonBridge !== 'undefined' && typeof HorizonBridge.onHorizonTaskDeleted === 'function') {
+    HorizonBridge.onHorizonTaskDeleted(task.backlogId);
+  }
+
+  renderAll();
+
+  if (typeof showActionToast === 'function') {
+    showActionToast(`🗑️ Deleted "${task.title.substring(0, 28)}..."`, 'Revive', () => {
+      restoreRevivedTask(taskId);
+    }, seconds * 1000);
+  } else if (typeof showToast === 'function') {
+    showToast(`🗑️ Task deleted`, 'info');
+  }
+}
+
+function restoreRevivedTask(taskId) {
+  const item = window._recentlyDeletedTasks[taskId];
+  if (!item) return;
+
+  clearTimeout(item.timeoutId);
+  const task = item.task;
+  state.tasks.push(task);
+  saveData();
+
+  if (task.backlogId && typeof HorizonBridge !== 'undefined' && typeof HorizonBridge.syncHorizonTaskToBacklog === 'function') {
+    HorizonBridge.syncHorizonTaskToBacklog(task);
+  }
+
+  delete window._recentlyDeletedTasks[taskId];
+  renderAll();
+  if (typeof showToast === 'function') {
+    showToast(`✨ Restored "${task.title.substring(0, 28)}..."`, 'success');
+  }
+}
+
+function clearDoneColumnWithRevive(seconds = 10) {
+  const doneTasks = state.tasks.filter(t => t.completed || t.kanbanStatus === 'done');
+  if (doneTasks.length === 0) {
+    if (typeof showToast === 'function') showToast('Done column is already empty.', 'info');
+    return;
+  }
+
+  const backupList = JSON.parse(JSON.stringify(doneTasks));
+  const batchId = 'batch_' + Date.now();
+  window._recentlyDeletedTasks[batchId] = {
+    tasks: backupList,
+    timeoutId: setTimeout(() => {
+      delete window._recentlyDeletedTasks[batchId];
+    }, seconds * 1000)
+  };
+
+  const doneIds = new Set(doneTasks.map(t => t.id));
+  state.tasks = state.tasks.filter(t => !doneIds.has(t.id));
+  saveData();
+  renderAll();
+
+  if (typeof showActionToast === 'function') {
+    showActionToast(`🧹 Cleared ${doneTasks.length} Done tasks.`, 'Revive All', () => {
+      const b = window._recentlyDeletedTasks[batchId];
+      if (b) {
+        clearTimeout(b.timeoutId);
+        state.tasks = [...state.tasks, ...b.tasks];
+        delete window._recentlyDeletedTasks[batchId];
+        saveData();
+        renderAll();
+        if (typeof showToast === 'function') showToast(`✨ Revived ${b.tasks.length} tasks!`, 'success');
+      }
+    }, seconds * 1000);
+  }
+}
+
+function setKanbanColumnFilter(colId) {
+  state.kanbanColumnFilter = colId;
+  renderKanbanBoard();
+}
+
+function toggleArchivedDone() {
+  state.showArchivedDone = !state.showArchivedDone;
+  renderKanbanBoard();
 }
 
 function renderKanbanBoard() {
   const container = document.getElementById('kanban-board-container');
   if (!container) return;
 
+  // Auto-sync Backlog items into state before rendering Kanban
+  if (typeof HorizonBridge !== 'undefined' && typeof HorizonBridge.syncAll === 'function') {
+    HorizonBridge.syncAll();
+  }
+
   // Get tasks based on current horizon filter
   let tasks = state.tasks.filter(task => {
     if (state.activeHorizon === 'general') {
-      return ['daily', 'weekly', 'monthly'].includes(task.tier);
+      return ['daily', 'weekly', 'monthly', 'general'].includes(task.tier) || !!task.backlogId;
     } else if (state.activeHorizon !== 'all') {
-      return task.tier === state.activeHorizon;
+      return task.tier === state.activeHorizon || (state.activeHorizon === 'general' && !!task.backlogId);
     }
     return true;
   });
@@ -1655,6 +1871,7 @@ function renderKanbanBoard() {
       return (t.title || '').toLowerCase().includes(q) ||
              (t.description || '').toLowerCase().includes(q) ||
              (t.category || '').toLowerCase().includes(q) ||
+             (t.group || '').toLowerCase().includes(q) ||
              (t.tags || []).some(tg => tg.toLowerCase().includes(q));
     });
   }
@@ -1670,129 +1887,221 @@ function renderKanbanBoard() {
     }
   });
 
-  container.innerHTML = KANBAN_COLUMNS.map(col => {
-    const colTasks = columns[col.id] || [];
-    const otherCols = KANBAN_COLUMNS.filter(c => c.id !== col.id);
+  // 24-Hour Auto-Archive for Done Column:
+  const now = Date.now();
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  const activeDoneTasks = [];
+  const archivedDoneTasks = [];
 
-    return `
-      <div class="kb-column" data-column="${col.id}">
-        <div class="kb-column-header" style="border-bottom-color: ${col.border};">
-          <div class="kb-column-title-row">
-            <span class="kb-column-emoji">${col.emoji}</span>
-            <span class="kb-column-label" style="color: ${col.color};">${col.label}</span>
-            <span class="kb-column-count" style="background: ${col.bg}; color: ${col.color}; border-color: ${col.border};">${colTasks.length}</span>
-          </div>
-        </div>
-        <div class="kb-column-body" id="kb-body-${col.id}" data-column="${col.id}">
-          ${colTasks.length === 0 ? `<div class="kb-empty">No tasks here</div>` :
-            colTasks.map(t => {
-              const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: '📌', name: 'Task', color: '#888' };
-              const subtasks = t.subtasks || [];
-              const doneSubs = subtasks.filter(s => s.completed).length;
-              const totalSubs = subtasks.length;
-              const subPct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : -1;
+  columns.done.forEach(t => {
+    const compTime = t.completedAt ? new Date(t.completedAt).getTime() : 0;
+    if (compTime && (now - compTime) >= TWENTY_FOUR_HOURS) {
+      archivedDoneTasks.push(t);
+    } else {
+      activeDoneTasks.push(t);
+    }
+  });
 
-              return `
-                <div class="kb-card" data-id="${t.id}" draggable="true">
-                  <div class="kb-card-top">
-                    <div class="kb-card-title">${escapeHTML(t.title)}</div>
-                    <div class="kb-card-move-dropdown">
-                      <button class="kb-move-btn" title="Move to column">
-                        <i data-lucide="more-horizontal"></i>
-                      </button>
-                      <div class="kb-move-menu">
-                        ${otherCols.map(oc => `
-                          <button class="kb-move-option" onclick="moveTaskToKanban('${t.id}', '${oc.id}', event)" style="color: ${oc.color};">
-                            ${oc.emoji} ${oc.label}
-                          </button>
-                        `).join('')}
-                        <hr style="border-color: rgba(255,255,255,0.06); margin: 4px 0;">
-                        <button class="kb-move-option" onclick="openEditModal('${t.id}')" style="color: var(--text-secondary);">
-                          ✏️ Edit Task
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  ${t.description ? `<div class="kb-card-desc">${escapeHTML(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</div>` : ''}
-                  <div class="kb-card-meta">
-                    <span class="kb-tier-pill" style="color: ${tierObj.color || '#888'}">${tierObj.emoji} ${tierObj.name}</span>
-                    <span class="kb-prio-pill kb-prio-${t.priority}">${t.priority}</span>
-                    ${t.dueDate ? `<span class="kb-due-pill"><i data-lucide="calendar" style="width:10px;height:10px;"></i> ${t.dueDate}</span>` : ''}
-                  </div>
-                  ${subPct >= 0 ? `
-                    <div class="kb-card-progress">
-                      <div class="kb-progress-track">
-                        <div class="kb-progress-fill" style="width: ${subPct}%; background: ${col.color};"></div>
-                      </div>
-                      <span class="kb-progress-label">${doneSubs}/${totalSubs}</span>
-                    </div>
-                  ` : ''}
-                  <div class="kb-card-footer">
-                    <span class="kb-category-tag">#${t.category || 'General'}</span>
-                    ${col.id !== 'done' ? `
-                      <button class="kb-focus-btn" onclick="if(typeof FocusEngine!=='undefined') FocusEngine.open('${t.id}')" title="Focus Mode">
-                        <i data-lucide="zap"></i>
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')
-          }
-        </div>
+  const displayDoneTasks = state.showArchivedDone
+    ? [...activeDoneTasks, ...archivedDoneTasks]
+    : activeDoneTasks;
+
+  const totalVisibleCount = columns.backlog.length + columns.todo.length + columns.in_progress.length + activeDoneTasks.length;
+
+  // Render Column Tabs Bar above columns:
+  const tabsHTML = `
+    <div class="kb-tabs-wrapper">
+      <div class="kb-column-tabs">
+        <button type="button" class="kb-tab-pill ${state.kanbanColumnFilter === 'all' ? 'active' : ''}" onclick="setKanbanColumnFilter('all')">
+          <i data-lucide="layout-grid" style="width:13px;height:13px;"></i>
+          <span>All Columns</span>
+          <span class="kb-tab-badge">${totalVisibleCount}</span>
+        </button>
+        ${KANBAN_COLUMNS.map(col => {
+          const count = col.id === 'done' ? activeDoneTasks.length : (columns[col.id] || []).length;
+          const isSelected = state.kanbanColumnFilter === col.id;
+          return `
+            <button type="button" class="kb-tab-pill ${isSelected ? 'active' : ''}" onclick="setKanbanColumnFilter('${col.id}')" style="--col-color: ${col.color};">
+              <span>${col.emoji} ${col.label}</span>
+              <span class="kb-tab-badge">${count}</span>
+            </button>
+          `;
+        }).join('')}
       </div>
-    `;
-  }).join('');
+    </div>
+  `;
 
+  // Filter columns if tab selected:
+  const visibleColumns = state.kanbanColumnFilter === 'all'
+    ? KANBAN_COLUMNS
+    : KANBAN_COLUMNS.filter(c => c.id === state.kanbanColumnFilter);
+
+  const columnsGridHTML = `
+    <div class="kanban-grid-wrapper ${state.kanbanColumnFilter !== 'all' ? 'single-column-view' : ''}">
+      <div class="kanban-board" id="kanbanBoard">
+        ${visibleColumns.map(col => {
+          const colTasks = col.id === 'done' ? displayDoneTasks : (columns[col.id] || []);
+          const otherCols = KANBAN_COLUMNS.filter(c => c.id !== col.id);
+
+          return `
+            <div class="kb-column" data-column="${col.id}">
+              <div class="kb-column-header" style="border-bottom-color: ${col.border};">
+                <div class="kb-column-title-row">
+                  <span class="kb-column-emoji">${col.emoji}</span>
+                  <span class="kb-column-label" style="color: ${col.color};">${col.label}</span>
+                  <span class="kb-column-count" style="background: ${col.bg}; color: ${col.color}; border-color: ${col.border};">${colTasks.length}</span>
+                  ${col.id === 'done' && activeDoneTasks.length > 0 ? `
+                    <button type="button" class="kb-clear-done-btn" onclick="clearDoneColumnWithRevive(10)" title="Delete done tasks with 10s Revive">
+                      <i data-lucide="trash-2" style="width:11px;height:11px;"></i> Clear All
+                    </button>
+                  ` : ''}
+                </div>
+                ${col.id === 'done' && archivedDoneTasks.length > 0 ? `
+                  <div class="kb-archived-notice-row">
+                    <span class="kb-archived-text">Auto-archived ${archivedDoneTasks.length} tasks (>24h)</span>
+                    <button type="button" class="kb-archived-toggle-btn" onclick="toggleArchivedDone()">
+                      ${state.showArchivedDone ? 'Hide' : 'Show'} (${archivedDoneTasks.length})
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+              <div class="kb-column-body" id="kb-body-${col.id}" data-column="${col.id}">
+                ${colTasks.length === 0 ? `<div class="kb-empty">No tasks in this column</div>` :
+                  colTasks.map(t => {
+                    const isBkl = !!t.backlogId || !!t.isBacklog;
+                    const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: isBkl ? '📥' : '📌', name: isBkl ? 'Backlog' : 'Task', color: '#64748b' };
+                    const subtasks = t.subtasks || [];
+                    const doneSubs = subtasks.filter(s => s.completed).length;
+                    const totalSubs = subtasks.length;
+                    const subPct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : -1;
+                    const isOldArchived = col.id === 'done' && t.completedAt && (now - new Date(t.completedAt).getTime()) >= TWENTY_FOUR_HOURS;
+
+                    return `
+                      <div class="kb-card ${isBkl ? 'kb-card-backlog' : ''} ${isOldArchived ? 'kb-card-archived' : ''}" data-id="${t.id}" data-column="${col.id}" draggable="true">
+                        <div class="kb-card-top">
+                          <div class="kb-card-title">${escapeHTML(t.title)}</div>
+                          <div class="kb-card-move-dropdown">
+                            <button type="button" class="kb-move-btn" title="Move to column">
+                              <i data-lucide="more-horizontal"></i>
+                            </button>
+                            <div class="kb-move-menu">
+                              ${otherCols.map(oc => `
+                                <button type="button" class="kb-move-option" onclick="moveTaskToKanban('${t.id}', '${oc.id}', event)" style="color: ${oc.color};">
+                                  ${oc.emoji} ${oc.label}
+                                </button>
+                              `).join('')}
+                              <hr style="border-color: rgba(255,255,255,0.06); margin: 4px 0;">
+                              <button type="button" class="kb-move-option" onclick="openEditModal('${t.id}')" style="color: var(--text-secondary);">
+                                ✏️ Edit Task
+                              </button>
+                              <button type="button" class="kb-move-option" onclick="deleteTaskWithRevive('${t.id}', 10, event)" style="color: #ef4444;">
+                                🗑️ Delete (10s Revive)
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        ${t.description ? `<div class="kb-card-desc">${escapeHTML(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</div>` : ''}
+                        <div class="kb-card-meta">
+                          ${isBkl ? `
+                            <span class="kb-backlog-badge" title="Executive Backlog Objective">
+                              <i data-lucide="layers" style="width:10px;height:10px;"></i> Backlog
+                            </span>
+                          ` : `
+                            <span class="kb-tier-pill" style="color: ${tierObj.color || '#888'}">${tierObj.emoji} ${tierObj.name}</span>
+                          `}
+                          <span class="kb-prio-pill kb-prio-${t.priority}">${t.priority}</span>
+                          ${t.dueDate ? `<span class="kb-due-pill"><i data-lucide="calendar" style="width:10px;height:10px;"></i> ${t.dueDate}</span>` : ''}
+                          ${isOldArchived ? `<span class="kb-archived-pill" title="Completed >24h ago">⏳ >24h</span>` : ''}
+                        </div>
+                        ${subPct >= 0 ? `
+                          <div class="kb-card-progress">
+                            <div class="kb-progress-track">
+                              <div class="kb-progress-fill" style="width: ${subPct}%; background: ${col.color};"></div>
+                            </div>
+                            <span class="kb-progress-label">${doneSubs}/${totalSubs}</span>
+                          </div>
+                        ` : ''}
+                        <div class="kb-card-footer">
+                          <span class="kb-category-tag">#${t.group ? (t.group.charAt(0).toUpperCase() + t.group.slice(1)) : (t.category || 'General')}</span>
+                          <div class="kb-card-footer-actions">
+                            ${col.id === 'done' ? `
+                              <button type="button" class="kb-card-revive-btn" onclick="deleteTaskWithRevive('${t.id}', 10, event)" title="Delete with 10s Revive option">
+                                <i data-lucide="trash-2"></i>
+                              </button>
+                            ` : `
+                              <button type="button" class="kb-focus-btn" onclick="if(typeof FocusEngine!=='undefined') FocusEngine.open('${t.id}')" title="Focus Mode">
+                                <i data-lucide="zap"></i>
+                              </button>
+                            `}
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')
+                }
+                <!-- Dedicated Drop Target Zone at Bottom -->
+                <div class="kb-drop-target-zone" data-column="${col.id}">
+                  <i data-lucide="arrow-down-circle" style="width:13px;height:13px;"></i>
+                  <span>Drop into ${col.label}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = tabsHTML + columnsGridHTML;
   lucide.createIcons();
-
-  // Bind drag-and-drop for Kanban columns
   bindKanbanDragDrop();
 }
 
 function bindKanbanDragDrop() {
-  const columns = document.querySelectorAll('.kb-column-body');
+  const cards = document.querySelectorAll('.kb-card');
+  const columns = document.querySelectorAll('.kb-column');
 
-  columns.forEach(colBody => {
-    const cards = colBody.querySelectorAll('.kb-card');
-
-    cards.forEach(card => {
-      card.addEventListener('dragstart', (e) => {
-        if (e.target.closest('button, .kb-move-dropdown')) {
-          e.preventDefault();
-          return;
-        }
-        card.classList.add('kb-dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
-      });
-
-      card.addEventListener('dragend', () => {
-        card.classList.remove('kb-dragging');
-        document.querySelectorAll('.kb-column-body').forEach(c => c.classList.remove('kb-drag-over'));
-      });
+  cards.forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      if (e.target.closest('button, .kb-move-dropdown, .kb-card-move-dropdown')) {
+        e.preventDefault();
+        return;
+      }
+      card.classList.add('kb-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
     });
 
-    colBody.addEventListener('dragover', (e) => {
+    card.addEventListener('dragend', () => {
+      card.classList.remove('kb-dragging');
+      document.querySelectorAll('.kb-column-body, .kb-column, .kb-drop-target-zone').forEach(c => {
+        c.classList.remove('kb-drag-over', 'drag-hover');
+      });
+    });
+  });
+
+  columns.forEach(col => {
+    const colBody = col.querySelector('.kb-column-body');
+    const colId = col.getAttribute('data-column');
+
+    col.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      colBody.classList.add('kb-drag-over');
+      if (colBody) colBody.classList.add('kb-drag-over');
     });
 
-    colBody.addEventListener('dragleave', (e) => {
-      // Only remove if leaving the actual column body, not entering a child
-      if (!colBody.contains(e.relatedTarget)) {
-        colBody.classList.remove('kb-drag-over');
+    col.addEventListener('dragleave', (e) => {
+      if (!col.contains(e.relatedTarget)) {
+        if (colBody) colBody.classList.remove('kb-drag-over');
       }
     });
 
-    colBody.addEventListener('drop', (e) => {
+    col.addEventListener('drop', (e) => {
       e.preventDefault();
-      colBody.classList.remove('kb-drag-over');
+      if (colBody) colBody.classList.remove('kb-drag-over');
       const taskId = e.dataTransfer.getData('text/plain');
-      const targetColumn = colBody.getAttribute('data-column');
-      if (taskId && targetColumn) {
-        moveTaskToKanban(taskId, targetColumn);
+      if (taskId && colId) {
+        moveTaskToKanban(taskId, colId);
       }
     });
   });
@@ -1820,7 +2129,7 @@ function createTaskCardElement(task) {
           <i data-lucide="alert-triangle"></i>
           <span>Tactical Busywork Alert: Unlinked to any higher horizon</span>
         </div>
-        <button class="btn-link-parent" onclick="if(typeof AlignmentEngine!=='undefined') AlignmentEngine.openLinkModal('${task.id}', event);" title="Connect to an Annual Vision or Quarterly Objective">
+        <button class="btn-link-parent" onclick="if(typeof AlignmentEngine!=='undefined') AlignmentEngine.openLinkModal('${task.id}', event);" title="Connect to an Annual Goal or Quarterly Objective">
           <i data-lucide="link"></i>
           <span>Link Parent Goal</span>
         </button>
@@ -2803,6 +3112,49 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+function showActionToast(message, actionLabel, onAction, durationMs = 10000) {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-with-action';
+  toast.innerHTML = `
+    <i data-lucide="info"></i>
+    <span class="toast-text">${escapeHTML(message)}</span>
+    <button class="toast-action-btn" type="button">${escapeHTML(actionLabel)}</button>
+  `;
+  const actionBtn = toast.querySelector('.toast-action-btn');
+  let timeoutId = null;
+  let remainingSec = Math.round(durationMs / 1000);
+
+  const countdownInterval = setInterval(() => {
+    remainingSec--;
+    if (remainingSec > 0 && actionBtn) {
+      actionBtn.textContent = `${actionLabel} (${remainingSec}s)`;
+    } else {
+      clearInterval(countdownInterval);
+    }
+  }, 1000);
+
+  actionBtn.addEventListener('click', () => {
+    clearInterval(countdownInterval);
+    clearTimeout(timeoutId);
+    toast.remove();
+    if (typeof onAction === 'function') onAction();
+  });
+
+  toastContainer.appendChild(toast);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  timeoutId = setTimeout(() => {
+    clearInterval(countdownInterval);
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all 0.25s ease';
+    setTimeout(() => toast.remove(), 250);
+  }, durationMs);
+}
+
 function escapeHTML(str) {
   if (!str) return '';
   return str.replace(/[&<>'"]/g, 
@@ -2817,981 +3169,7 @@ function escapeHTML(str) {
 }
 
 // ── Focus Mode & Deep Work Engine ──────────────────────────
-const FOCUS_STORAGE_KEY = 'tesseract_focus_sessions';
-
-const FocusEngine = {
-  activeTaskId: null,
-  durationMinutes: 25,
-  remainingSeconds: 25 * 60,
-  totalSeconds: 25 * 60,
-  timerInterval: null,
-  isRunning: false,
-  audioContext: null,
-  soundNodes: null,
-  currentSound: 'rain',
-  volume: 0.5,
-  wakeLock: null,
-
-  async requestWakeLock() {
-    if ('wakeLock' in navigator) {
-      try {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-        this.wakeLock.addEventListener('release', () => {
-          this.wakeLock = null;
-        });
-      } catch (e) {
-        console.warn('Screen Wake Lock could not be obtained:', e);
-      }
-    }
-  },
-
-  releaseWakeLock() {
-    if (this.wakeLock) {
-      this.wakeLock.release().then(() => {
-        this.wakeLock = null;
-      }).catch(() => {});
-    }
-  },
-
-  init() {
-    // Preset buttons
-    document.querySelectorAll('.focus-preset-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        if (this.isRunning) this.pause();
-        const mins = parseInt(chip.getAttribute('data-minutes'), 10);
-        this.setDuration(mins);
-      });
-    });
-
-    // Control buttons
-    const btnToggle = document.getElementById('focus-btn-toggle');
-    if (btnToggle) btnToggle.addEventListener('click', () => this.toggle());
-
-    const btnReset = document.getElementById('focus-btn-reset');
-    if (btnReset) btnReset.addEventListener('click', () => this.reset());
-
-    const btnMinus5 = document.getElementById('focus-btn-minus5');
-    if (btnMinus5) btnMinus5.addEventListener('click', () => this.subtractFiveMinutes());
-
-    const btnPlus5 = document.getElementById('focus-btn-plus5');
-    if (btnPlus5) btnPlus5.addEventListener('click', () => this.addFiveMinutes());
-
-    const btnCustom = document.getElementById('focus-btn-custom-duration');
-    if (btnCustom) btnCustom.addEventListener('click', () => this.promptCustomDuration());
-
-    const digitsDisplay = document.getElementById('focus-time-digits');
-    if (digitsDisplay) {
-      digitsDisplay.title = 'Click to set custom focus duration';
-      digitsDisplay.addEventListener('click', () => this.promptCustomDuration());
-    }
-
-    const btnExit = document.getElementById('focus-exit-btn');
-    if (btnExit) btnExit.addEventListener('click', () => this.close());
-
-    const btnHeaderFocus = document.getElementById('btn-header-focus');
-    if (btnHeaderFocus) {
-      btnHeaderFocus.addEventListener('click', () => {
-        this.open();
-      });
-    }
-
-    const taskSelect = document.getElementById('focus-task-select');
-    if (taskSelect) {
-      taskSelect.addEventListener('change', (e) => {
-        const val = e.target.value;
-        this.setTask(val || null);
-      });
-    }
-
-    const btnComplete = document.getElementById('focus-btn-complete-task');
-    if (btnComplete) btnComplete.addEventListener('click', () => this.markTaskComplete());
-
-    // Soundscape controls (Moved Downwards)
-    const soundSelect = document.getElementById('focus-sound-select');
-    if (soundSelect) {
-      soundSelect.addEventListener('change', (e) => {
-        this.currentSound = e.target.value;
-        if (this.isRunning) {
-          this.stopAudio();
-          this.playAudio(this.currentSound);
-        }
-      });
-    }
-
-    const volSlider = document.getElementById('focus-volume-slider');
-    if (volSlider) {
-      volSlider.addEventListener('input', (e) => {
-        this.volume = parseFloat(e.target.value);
-        if (this.soundNodes && this.soundNodes.masterGain && this.audioContext) {
-          this.soundNodes.masterGain.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
-        }
-      });
-    }
-
-    // Global keyboard shortcuts
-    window.addEventListener('keydown', (e) => {
-      const overlay = document.getElementById('focus-mode-overlay');
-      if (overlay && overlay.style.display !== 'none') {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          this.close();
-        } else if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
-          e.preventDefault();
-          this.toggle();
-        } else if ((e.key === 'r' || e.key === 'R') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
-          e.preventDefault();
-          this.reset();
-        }
-      }
-    });
-  },
-
-  open(taskId = null) {
-    const overlay = document.getElementById('focus-mode-overlay');
-    if (!overlay) return;
-
-    // If no taskId passed, smartly pick top incomplete Daily, Weekly, Monthly, Quarterly, Annual
-    if (!taskId) {
-      const incomplete = state.tasks.filter(t => !t.completed);
-      const top = incomplete.find(t => t.tier === 'daily' && t.priority === 'urgent')
-        || incomplete.find(t => t.tier === 'daily')
-        || incomplete.find(t => t.tier === 'weekly')
-        || incomplete.find(t => t.tier === 'monthly')
-        || incomplete.find(t => t.tier === 'quarterly')
-        || incomplete.find(t => t.tier === 'annual')
-        || (incomplete.length > 0 ? incomplete[0] : null);
-      taskId = top ? top.id : null;
-    }
-
-    // Populate Task Dropdown Switcher
-    this.populateTaskPicker(taskId);
-
-    this.setTask(taskId);
-    this.reset();
-    overlay.style.display = 'flex';
-    lucide.createIcons();
-  },
-
-  populateTaskPicker(selectedTaskId = null) {
-    const select = document.getElementById('focus-task-select');
-    if (!select) return;
-    select.innerHTML = '<option value="">⚡ Free Flow Sprint</option>';
-
-    TIERS.forEach(tier => {
-      const tierTasks = state.tasks.filter(t => t.tier === tier.id && !t.completed);
-      if (tierTasks.length > 0) {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = `${tier.emoji} ${tier.name}`;
-        tierTasks.forEach(task => {
-          const opt = document.createElement('option');
-          opt.value = task.id;
-          opt.textContent = `[${tier.name.split(' ')[0]}] ${task.title.substring(0, 32)}${task.title.length > 32 ? '...' : ''}`;
-          if (selectedTaskId === task.id) opt.selected = true;
-          optgroup.appendChild(opt);
-        });
-        select.appendChild(optgroup);
-      }
-    });
-  },
-
-  setTask(taskId) {
-    this.activeTaskId = taskId;
-    const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
-    const taskTierEl = document.getElementById('focus-task-tier');
-    const taskTitleEl = document.getElementById('focus-task-title');
-    const taskDescEl = document.getElementById('focus-task-desc');
-    const completeBtn = document.getElementById('focus-btn-complete-task');
-    const select = document.getElementById('focus-task-select');
-
-    if (select) select.value = taskId || '';
-
-    if (task) {
-      const tierObj = TIERS.find(t => t.id === task.tier) || { emoji: '📌', name: 'Task' };
-      if (taskTierEl) taskTierEl.textContent = `${tierObj.emoji} ${tierObj.name.toUpperCase()}`;
-      if (taskTitleEl) taskTitleEl.textContent = task.title;
-      if (taskDescEl) taskDescEl.textContent = task.description || 'Focus on high-leverage execution. No distractions.';
-      if (completeBtn) {
-        completeBtn.style.display = 'inline-flex';
-        const label = completeBtn.querySelector('#focus-complete-btn-text');
-        if (label) label.textContent = task.completed ? 'Goal Completed ✅' : 'Mark Goal Complete';
-      }
-      this.renderFocusSubtasks(task);
-    } else {
-      if (taskTierEl) taskTierEl.textContent = '⚡ DEEP WORK SPRINT';
-      if (taskTitleEl) taskTitleEl.textContent = 'Uninterrupted Flow Session';
-      if (taskDescEl) taskDescEl.textContent = 'Single-task focus mode. Eliminate all context switching.';
-      if (completeBtn) completeBtn.style.display = 'none';
-      const container = document.getElementById('focus-subtasks-container');
-      if (container) {
-        container.style.display = 'none';
-        container.innerHTML = '';
-      }
-    }
-  },
-
-  renderFocusSubtasks(task) {
-    const container = document.getElementById('focus-subtasks-container');
-    if (!container) return;
-    const subtasks = (task && task.subtasks) ? task.subtasks : [];
-    if (subtasks.length === 0) {
-      container.style.display = 'none';
-      container.innerHTML = '';
-      return;
-    }
-
-    const done = subtasks.filter(s => s.completed).length;
-    const total = subtasks.length;
-    const pct = Math.round((done / total) * 100);
-
-    container.style.display = 'block';
-    container.innerHTML = `
-      <div class="focus-subtasks-header">
-        <span>Milestones (${done}/${total})</span>
-        <span>${pct}% Done</span>
-      </div>
-      <div class="focus-subtasks-list">
-        ${subtasks.map(st => `
-          <label class="focus-subtask-item ${st.completed ? 'completed' : ''}">
-            <input type="checkbox" class="subtask-checkbox" ${st.completed ? 'checked' : ''} data-focus-subtask="${st.id}">
-            <span>${escapeHTML(st.title)}</span>
-          </label>
-        `).join('')}
-      </div>
-    `;
-
-    container.querySelectorAll('input[data-focus-subtask]').forEach(chk => {
-      chk.addEventListener('change', () => {
-        const sId = chk.getAttribute('data-focus-subtask');
-        toggleSubtask(task.id, sId);
-      });
-    });
-  },
-
-  close() {
-    this.pause();
-    this.releaseWakeLock();
-    this.stopAudio();
-    const overlay = document.getElementById('focus-mode-overlay');
-    if (overlay) overlay.style.display = 'none';
-    document.title = 'Tesseract | Multi-Horizon Goal & Task Matrix';
-  },
-
-  setDuration(minutes) {
-    this.durationMinutes = minutes;
-    this.totalSeconds = minutes * 60;
-    this.remainingSeconds = this.totalSeconds;
-    this.updateDisplay();
-    this.updateRing();
-    this.highlightActivePreset();
-  },
-
-  promptCustomDuration() {
-    const currentMins = Math.round(this.totalSeconds / 60);
-    const input = prompt("Set custom focus duration in minutes (1 to 360):", currentMins);
-    if (input !== null) {
-      const parsed = parseInt(input.trim(), 10);
-      if (!isNaN(parsed) && parsed >= 1 && parsed <= 360) {
-        if (this.isRunning) this.pause();
-        this.setDuration(parsed);
-        showToast(`Focus timer set to ${parsed}m.`, 'info');
-      } else if (input.trim() !== '') {
-        showToast('Please enter a valid number of minutes between 1 and 360.', 'error');
-      }
-    }
-  },
-
-  highlightActivePreset() {
-    const currentMins = Math.round(this.totalSeconds / 60);
-    let matched = false;
-    document.querySelectorAll('.focus-preset-chip[data-minutes]').forEach(c => {
-      const mins = parseInt(c.getAttribute('data-minutes'), 10);
-      const isMatch = mins === currentMins;
-      c.classList.toggle('active', isMatch);
-      if (isMatch) matched = true;
-    });
-    const customChip = document.getElementById('focus-btn-custom-duration');
-    if (customChip) customChip.classList.toggle('active', !matched);
-  },
-
-  toggle() {
-    if (this.isRunning) {
-      this.pause();
-    } else {
-      this.start();
-    }
-  },
-
-  start() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this.requestWakeLock();
-
-    const statusEl = document.getElementById('focus-time-status');
-    if (statusEl) statusEl.textContent = 'IN FLOW';
-
-    const toggleText = document.getElementById('focus-toggle-text');
-    if (toggleText) toggleText.textContent = 'Pause';
-
-    const playIcon = document.getElementById('focus-play-icon');
-    if (playIcon) {
-      playIcon.setAttribute('data-lucide', 'pause');
-      lucide.createIcons();
-    }
-
-    this.playAudio(this.currentSound);
-
-    this.timerInterval = setInterval(() => {
-      this.remainingSeconds--;
-      this.updateDisplay();
-      this.updateRing();
-
-      if (this.remainingSeconds <= 0) {
-        this.onComplete();
-      }
-    }, 1000);
-  },
-
-  pause() {
-    this.isRunning = false;
-    this.releaseWakeLock();
-    clearInterval(this.timerInterval);
-    this.timerInterval = null;
-
-    const statusEl = document.getElementById('focus-time-status');
-    if (statusEl) statusEl.textContent = 'PAUSED';
-
-    const toggleText = document.getElementById('focus-toggle-text');
-    if (toggleText) toggleText.textContent = 'Resume';
-
-    const playIcon = document.getElementById('focus-play-icon');
-    if (playIcon) {
-      playIcon.setAttribute('data-lucide', 'play');
-      lucide.createIcons();
-    }
-
-    this.stopAudio();
-  },
-
-  reset() {
-    this.pause();
-    this.remainingSeconds = this.totalSeconds;
-    this.updateDisplay();
-    this.updateRing();
-
-    const statusEl = document.getElementById('focus-time-status');
-    if (statusEl) statusEl.textContent = 'READY';
-
-    const toggleText = document.getElementById('focus-toggle-text');
-    if (toggleText) toggleText.textContent = 'Start Focus';
-  },
-
-  subtractFiveMinutes() {
-    if (this.totalSeconds <= 300) {
-      this.totalSeconds = Math.max(60, this.totalSeconds - 60);
-      this.remainingSeconds = Math.max(0, this.remainingSeconds - 60);
-    } else {
-      this.totalSeconds -= 300;
-      this.remainingSeconds = Math.max(0, this.remainingSeconds - 300);
-    }
-    this.durationMinutes = Math.round(this.totalSeconds / 60);
-    this.updateDisplay();
-    this.updateRing();
-    this.highlightActivePreset();
-  },
-
-  addFiveMinutes() {
-    this.totalSeconds += 300;
-    this.remainingSeconds += 300;
-    this.durationMinutes = Math.round(this.totalSeconds / 60);
-    this.updateDisplay();
-    this.updateRing();
-    this.highlightActivePreset();
-  },
-
-  updateDisplay() {
-    const mins = Math.floor(this.remainingSeconds / 60);
-    const secs = this.remainingSeconds % 60;
-    const str = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    
-    const digitsEl = document.getElementById('focus-time-digits');
-    if (digitsEl) digitsEl.textContent = str;
-
-    if (this.isRunning) {
-      document.title = `(${str}) Focus Mode | Tesseract`;
-    } else {
-      document.title = 'Tesseract | Multi-Horizon Goal & Task Matrix';
-    }
-  },
-
-  updateRing() {
-    const ring = document.getElementById('focus-ring-progress');
-    if (!ring) return;
-    const circumference = 659.73; // 2 * pi * 105
-    const progress = Math.max(0, this.remainingSeconds / this.totalSeconds);
-    const offset = circumference * (1 - progress);
-    ring.style.strokeDashoffset = offset;
-  },
-
-  onComplete() {
-    this.pause();
-    this.playChime();
-
-    if (typeof confetti === 'function') {
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    }
-
-    const durationMins = Math.round(this.totalSeconds / 60);
-    const sessions = this.getSessions();
-    const task = this.activeTaskId ? state.tasks.find(t => t.id === this.activeTaskId) : null;
-    const newSession = {
-      id: `fs_${Date.now()}`,
-      taskId: this.activeTaskId,
-      taskTitle: task ? task.title : 'General Deep Work Sprint',
-      durationMinutes: durationMins,
-      timestamp: new Date().toISOString()
-    };
-    sessions.push(newSession);
-    localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(sessions));
-
-    // Award Gamified XP
-    if (typeof XPEngine !== 'undefined') {
-      let focusXP = durationMins; // Base 1 XP per minute
-      if (durationMins >= 90) focusXP = XP_VALUES.FOCUS_SESSION_90;
-      else if (durationMins >= 50) focusXP = XP_VALUES.FOCUS_SESSION_50;
-      else if (durationMins >= 25) focusXP = XP_VALUES.FOCUS_SESSION_25;
-
-      XPEngine.award(focusXP, `Deep Work Flow (${durationMins}m)`);
-      XPEngine.updateQuestProgress('focus_mins', durationMins);
-
-      // Evaluate focus badges
-      if (durationMins >= 90) XPEngine.awardBadge('flow_state');
-      else if (durationMins >= 25) XPEngine.awardBadge('deep_work_init');
-    }
-
-    showToast('🎉 Focus session completed! Outstanding deep work.', 'success');
-    this.reset();
-    renderAll();
-  },
-
-  markTaskComplete() {
-    if (!this.activeTaskId) return;
-    toggleTaskCompletion(this.activeTaskId);
-    const completeBtn = document.getElementById('focus-btn-complete-task');
-    if (completeBtn) {
-      const label = completeBtn.querySelector('#focus-complete-btn-text');
-      if (label) label.textContent = 'Goal Completed! 🎉';
-    }
-    showToast('Task marked complete!', 'success');
-  },
-
-  getSessions() {
-    try {
-      return JSON.parse(localStorage.getItem(FOCUS_STORAGE_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  },
-
-  getTotalHours() {
-    const sessions = this.getSessions();
-    const totalMins = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
-    return (totalMins / 60).toFixed(1);
-  },
-
-  // ── Web Audio API Synthesizer (100% Offline Ambient Soundscapes) ────
-  ensureAudioContext() {
-    if (!this.audioContext) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) this.audioContext = new AudioContextClass();
-    }
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-      this.audioContext.resume();
-    }
-  },
-
-  playAudio(type) {
-    if (type === 'mute') return;
-    this.ensureAudioContext();
-    if (!this.audioContext) return;
-
-    this.stopAudio();
-
-    const ctx = this.audioContext;
-    const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(this.volume, ctx.currentTime);
-    masterGain.connect(ctx.destination);
-
-    if (type === 'rain') {
-      const bufferSize = ctx.sampleRate * 2;
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        b0 = 0.99886 * b0 + white * 0.0555179;
-        b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.96900 * b2 + white * 0.1538520;
-        b3 = 0.86650 * b3 + white * 0.3104856;
-        b4 = 0.55000 * b4 + white * 0.5329522;
-        b5 = -0.7616 * b5 - white * 0.0168980;
-        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.05;
-        b6 = white * 0.115926;
-      }
-
-      const whiteNoise = ctx.createBufferSource();
-      whiteNoise.buffer = noiseBuffer;
-      whiteNoise.loop = true;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(600, ctx.currentTime);
-
-      whiteNoise.connect(filter);
-      filter.connect(masterGain);
-      whiteNoise.start();
-
-      this.soundNodes = { masterGain, source: whiteNoise };
-    } else if (type === 'waves') {
-      const bufferSize = ctx.sampleRate * 2;
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = (Math.random() * 2 - 1) * 0.08;
-      }
-
-      const noise = ctx.createBufferSource();
-      noise.buffer = noiseBuffer;
-      noise.loop = true;
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(450, ctx.currentTime);
-
-      const swellGain = ctx.createGain();
-      swellGain.gain.setValueAtTime(0.2, ctx.currentTime);
-
-      const lfo = ctx.createOscillator();
-      lfo.frequency.setValueAtTime(0.12, ctx.currentTime);
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.setValueAtTime(0.25, ctx.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(swellGain.gain);
-
-      noise.connect(filter);
-      filter.connect(swellGain);
-      swellGain.connect(masterGain);
-
-      noise.start();
-      lfo.start();
-
-      this.soundNodes = { masterGain, source: noise, lfo };
-    } else if (type === 'binaural') {
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      osc1.frequency.setValueAtTime(196, ctx.currentTime);
-      osc2.frequency.setValueAtTime(206, ctx.currentTime);
-
-      const toneGain = ctx.createGain();
-      toneGain.gain.setValueAtTime(0.12, ctx.currentTime);
-
-      osc1.connect(toneGain);
-      osc2.connect(toneGain);
-      toneGain.connect(masterGain);
-
-      osc1.start();
-      osc2.start();
-
-      this.soundNodes = { masterGain, osc1, osc2 };
-    }
-  },
-
-  stopAudio() {
-    if (this.soundNodes) {
-      try {
-        if (this.soundNodes.source) this.soundNodes.source.stop();
-        if (this.soundNodes.lfo) this.soundNodes.lfo.stop();
-        if (this.soundNodes.osc1) this.soundNodes.osc1.stop();
-        if (this.soundNodes.osc2) this.soundNodes.osc2.stop();
-      } catch (e) {}
-      this.soundNodes = null;
-    }
-  },
-
-  playChime() {
-    this.ensureAudioContext();
-    if (!this.audioContext) return;
-    const ctx = this.audioContext;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 1.2);
-  }
-};
-
-// ══════════════════════════════════════════════════════════════════
-// 📄 1-Click Executive Weekly Report Exporter Engine
-// ══════════════════════════════════════════════════════════════════
-const WeeklyReportEngine = {
-  getReportData() {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    const userName = (state.profile && state.profile.name) ? state.profile.name : 'Executive Leader';
-    const totalXP = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.totalXP : 0;
-    const level = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.level : 1;
-    const rankTitle = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.rankTitle : 'Apprentice';
-    const streak = (typeof XPEngine !== 'undefined' && XPEngine.data) ? XPEngine.data.streak : 0;
-
-    // Completed tasks (either in last 7 days or marked completed)
-    const completedTasks = state.tasks.filter(t => {
-      if (!t.completed) return false;
-      if (t.completedAt) {
-        return new Date(t.completedAt) >= sevenDaysAgo;
-      }
-      return true; // Fallback for sample completed tasks
-    });
-
-    const activeTasks = state.tasks.filter(t => !t.completed);
-
-    // Deep Work sessions
-    let sessions = [];
-    if (typeof FocusEngine !== 'undefined') {
-      sessions = FocusEngine.getSessions();
-    }
-    const weeklySessions = sessions.filter(s => {
-      if (!s.timestamp) return true;
-      return new Date(s.timestamp) >= sevenDaysAgo;
-    });
-    const focusMins = weeklySessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
-    const focusHours = (focusMins / 60).toFixed(1);
-    const avgSessionMins = weeklySessions.length > 0 ? Math.round(focusMins / weeklySessions.length) : 0;
-    const maxSessionMins = weeklySessions.length > 0 ? Math.max(...weeklySessions.map(s => s.durationMinutes || 0)) : 0;
-
-    // Habits consistency
-    let habitsList = [];
-    if (typeof HabitsEngine !== 'undefined' && HabitsEngine.habits && HabitsEngine.habits.length > 0) {
-      habitsList = HabitsEngine.habits;
-    } else {
-      try {
-        const raw = localStorage.getItem('tesseract_habits_data');
-        if (raw) habitsList = JSON.parse(raw);
-      } catch (e) {}
-    }
-
-    // Calculate 7-day adherence for habits
-    const last7DayKeys = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      last7DayKeys.push(d.toISOString().split('T')[0]);
-    }
-
-    let totalHabitChecks = 0;
-    let possibleHabitChecks = habitsList.length * 7;
-    const habitsStats = habitsList.map(h => {
-      let checks = 0;
-      let dotString = '';
-      last7DayKeys.forEach(k => {
-        if (h.history && h.history[k]) {
-          checks++;
-          dotString += '●';
-        } else {
-          dotString += '○';
-        }
-      });
-      totalHabitChecks += checks;
-      const pct = Math.round((checks / 7) * 100);
-      return {
-        id: h.id,
-        title: h.title,
-        icon: h.icon || '🎯',
-        category: h.category || 'General',
-        checks,
-        pct,
-        dotString
-      };
-    });
-    const overallHabitAdherence = possibleHabitChecks > 0 ? Math.round((totalHabitChecks / possibleHabitChecks) * 100) : 100;
-
-    // Strategic Alignment Score
-    const totalTactical = state.tasks.filter(t => ['daily', 'weekly'].includes(t.tier) && !t.completed).length;
-    const linkedTactical = state.tasks.filter(t => ['daily', 'weekly'].includes(t.tier) && !t.completed && t.parentId).length;
-    const alignmentScore = totalTactical > 0 ? Math.round((linkedTactical / totalTactical) * 100) : 100;
-
-    const dateRangeStr = `${sevenDaysAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-
-    return {
-      userName,
-      now,
-      sevenDaysAgo,
-      dateRangeStr,
-      totalXP,
-      level,
-      rankTitle,
-      streak,
-      alignmentScore,
-      completedTasks,
-      activeTasks,
-      weeklySessions,
-      focusMins,
-      focusHours,
-      avgSessionMins,
-      maxSessionMins,
-      habitsStats,
-      overallHabitAdherence
-    };
-  },
-
-  generateMarkdown() {
-    const data = this.getReportData();
-    let md = `# 📄 TESSERACT EXECUTIVE WEEKLY REPORT\n`;
-    md += `> **Executive:** ${data.userName} | **Period:** ${data.dateRangeStr} | **Generated:** ${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}\n\n`;
-    md += `---\n\n`;
-
-    md += `## 📊 Executive Summary\n`;
-    md += `| Key Metric | Status / Value |\n`;
-    md += `|---|---|\n`;
-    md += `| **Executive Rank** | Level ${data.level} — ${data.rankTitle} |\n`;
-    md += `| **Total XP** | ${data.totalXP.toLocaleString()} XP |\n`;
-    md += `| **Execution Streak** | ${data.streak} Days 🔥 |\n`;
-    md += `| **Strategic Alignment** | ${data.alignmentScore}% ${data.alignmentScore >= 85 ? '🟢 Optimal' : data.alignmentScore >= 70 ? '🟡 Moderate' : '🔴 Action Required'} |\n`;
-    md += `| **Habit Adherence** | ${data.overallHabitAdherence}% |\n`;
-    md += `| **Deep Work Logged** | ${data.focusHours} Hours (${data.weeklySessions.length} sessions) |\n\n`;
-
-    md += `## ✅ Goals & Milestones Completed (${data.completedTasks.length})\n`;
-    TIERS.forEach(tierObj => {
-      const tierItems = data.completedTasks.filter(t => t.tier === tierObj.id);
-      if (tierItems.length > 0) {
-        md += `### ${tierObj.emoji} ${tierObj.name} (${tierItems.length})\n`;
-        tierItems.forEach(t => {
-          md += `- [x] **[${t.priority.toUpperCase()}]** ${t.title} *(#${t.category || 'General'})*\n`;
-          if (t.description) md += `  - *Notes:* ${t.description.replace(/\n/g, ' ')}\n`;
-        });
-        md += `\n`;
-      }
-    });
-
-    if (data.completedTasks.length === 0) {
-      md += `*No completed goals logged in this 7-day period.*\n\n`;
-    }
-
-    md += `## 🧠 Deep Work & Flow Velocity\n`;
-    md += `| Metric | Weekly Total |\n`;
-    md += `|---|---|\n`;
-    md += `| **Total Focus Hours** | ${data.focusHours} hrs (${data.focusMins} mins) |\n`;
-    md += `| **Completed Sprints** | ${data.weeklySessions.length} sessions |\n`;
-    md += `| **Average Session** | ${data.avgSessionMins} mins |\n`;
-    md += `| **Peak Sprint** | ${data.maxSessionMins} mins |\n\n`;
-
-    md += `## 🔁 Habit Consistency Matrix (Past 7 Days)\n`;
-    md += `| Habit | 7-Day Consistency | Adherence |\n`;
-    md += `|---|---|---|\n`;
-    data.habitsStats.forEach(h => {
-      md += `| ${h.icon} ${h.title} | \`${h.dotString}\` | **${h.pct}%** |\n`;
-    });
-    md += `| **Overall Consistency Score** | | **${data.overallHabitAdherence}%** |\n\n`;
-
-    md += `## 🎯 High-Leverage Priorities In Flight\n`;
-    const topActive = data.activeTasks.slice(0, 8);
-    if (topActive.length > 0) {
-      topActive.forEach(t => {
-        const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: '📌', name: 'Task' };
-        md += `- [ ] **[${t.priority.toUpperCase()}]** ${t.title} — *${tierObj.emoji} ${tierObj.name}* *(#${t.category || 'General'})*\n`;
-      });
-      md += `\n`;
-    } else {
-      md += `*All active objectives cleared!*\n\n`;
-    }
-
-    md += `---\n*Generated automatically by Tesseract Multi-Horizon Executive Operating System.*`;
-    return md;
-  },
-
-  generateHTMLPreview() {
-    const data = this.getReportData();
-    let html = `
-      <div class="report-preview-container">
-        <div class="report-header-banner">
-          <div class="report-badge-pill">OFFICIAL EXECUTIVE DEBRIEF</div>
-          <h2 class="report-doc-title">TESSERACT WEEKLY REPORT</h2>
-          <div class="report-meta-sub">
-            <span>👤 ${escapeHTML(data.userName)}</span>
-            <span>•</span>
-            <span>📅 ${data.dateRangeStr}</span>
-          </div>
-        </div>
-
-        <!-- 4-Stat Summary Cards -->
-        <div class="report-stats-grid">
-          <div class="report-stat-card gold">
-            <span class="report-stat-label">EXECUTIVE RANK</span>
-            <span class="report-stat-value">Lvl ${data.level}</span>
-            <span class="report-stat-sub">${data.rankTitle}</span>
-          </div>
-          <div class="report-stat-card">
-            <span class="report-stat-label">TOTAL XP</span>
-            <span class="report-stat-value">${data.totalXP.toLocaleString()}</span>
-            <span class="report-stat-sub">${data.streak} Day Streak 🔥</span>
-          </div>
-          <div class="report-stat-card">
-            <span class="report-stat-label">DEEP WORK</span>
-            <span class="report-stat-value">${data.focusHours}h</span>
-            <span class="report-stat-sub">${data.weeklySessions.length} Flow Sprints</span>
-          </div>
-          <div class="report-stat-card">
-            <span class="report-stat-label">HABIT SCORE</span>
-            <span class="report-stat-value">${data.overallHabitAdherence}%</span>
-            <span class="report-stat-sub">7-Day Consistency</span>
-          </div>
-        </div>
-
-        <!-- Section: Completed Goals -->
-        <div class="report-section-box">
-          <div class="report-section-title">
-            <span>✅ Completed Goals & Milestones</span>
-            <span class="report-count-badge">${data.completedTasks.length} Done</span>
-          </div>
-          <div class="report-tasks-list">
-    `;
-
-    if (data.completedTasks.length === 0) {
-      html += `<div class="report-empty-note">No goals marked completed in this period.</div>`;
-    } else {
-      TIERS.forEach(tierObj => {
-        const tierItems = data.completedTasks.filter(t => t.tier === tierObj.id);
-        if (tierItems.length > 0) {
-          html += `
-            <div class="report-tier-group">
-              <div class="report-tier-header" style="color: ${tierObj.color || 'var(--accent-primary)'}">
-                ${tierObj.emoji} ${tierObj.name} (${tierItems.length})
-              </div>
-          `;
-          tierItems.forEach(t => {
-            html += `
-              <div class="report-task-row">
-                <span class="report-check">✓</span>
-                <span class="report-task-name">${escapeHTML(t.title)}</span>
-                <span class="report-prio-pill prio-${t.priority}">${t.priority}</span>
-                <span class="report-cat-tag">#${escapeHTML(t.category || 'General')}</span>
-              </div>
-            `;
-          });
-          html += `</div>`;
-        }
-      });
-    }
-
-    html += `
-          </div>
-        </div>
-
-        <!-- Section: Habit Consistency Matrix -->
-        <div class="report-section-box">
-          <div class="report-section-title">
-            <span>🔁 Habit Cadence Matrix</span>
-            <span class="report-count-badge">${data.overallHabitAdherence}% Adherence</span>
-          </div>
-          <div class="report-habits-table">
-            <div class="report-habit-header-row">
-              <span>HABIT</span>
-              <span>7-DAY CONSISTENCY</span>
-              <span>SCORE</span>
-            </div>
-    `;
-
-    data.habitsStats.forEach(h => {
-      html += `
-        <div class="report-habit-data-row">
-          <span class="report-habit-name">${h.icon} ${escapeHTML(h.title)}</span>
-          <span class="report-habit-dots font-mono">${h.dotString}</span>
-          <span class="report-habit-pct">${h.pct}%</span>
-        </div>
-      `;
-    });
-
-    html += `
-          </div>
-        </div>
-
-        <!-- Section: Active Priorities -->
-        <div class="report-section-box">
-          <div class="report-section-title">
-            <span>🎯 High-Leverage Objectives In Flight</span>
-            <span class="report-count-badge">${data.activeTasks.length} Active</span>
-          </div>
-          <div class="report-tasks-list">
-    `;
-
-    const topActive = data.activeTasks.slice(0, 6);
-    if (topActive.length === 0) {
-      html += `<div class="report-empty-note">All strategic objectives completed!</div>`;
-    } else {
-      topActive.forEach(t => {
-        const tierObj = TIERS.find(ti => ti.id === t.tier) || { emoji: '📌', name: 'Task' };
-        html += `
-          <div class="report-task-row active">
-            <span class="report-bullet">•</span>
-            <span class="report-task-name">${escapeHTML(t.title)}</span>
-            <span class="report-tier-badge">${tierObj.emoji} ${tierObj.name}</span>
-            <span class="report-prio-pill prio-${t.priority}">${t.priority}</span>
-          </div>
-        `;
-      });
-    }
-
-    html += `
-          </div>
-        </div>
-      </div>
-    `;
-
-    return html;
-  },
-
-  open() {
-    window.location.href = 'report.html';
-  },
-
-  close() {
-    const modal = document.getElementById('weekly-report-modal');
-    if (modal) modal.style.display = 'none';
-    document.body.style.overflow = '';
-  },
-
-  copyMarkdown() {
-    const md = this.generateMarkdown();
-    navigator.clipboard.writeText(md).then(() => {
-      showToast('📋 Executive Weekly Report copied to clipboard!', 'success');
-    }).catch(() => {
-      showToast('Failed to copy to clipboard.', 'error');
-    });
-  },
-
-  downloadMarkdown() {
-    const md = this.generateMarkdown();
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const dataStr = "data:text/markdown;charset=utf-8," + encodeURIComponent(md);
-    const anchor = document.createElement('a');
-    anchor.setAttribute("href", dataStr);
-    anchor.setAttribute("download", `tesseract_executive_report_${dateStr}.md`);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    showToast('📥 Downloaded executive weekly report (.md)', 'success');
-  },
-
-  printReport() {
-    window.print();
-  }
-};
+// Modularized into js/focus_engine.js for high performance and separation of concerns.
 
 // ── 📱 Mobile Application Enhancements ─────────────────────────
 
