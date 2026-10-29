@@ -17,7 +17,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="css/styles.css">
+  <!-- Tesseract Executive Architecture — Modular Stylesheets -->
+  <link rel="stylesheet" href="css/modules/variables.css">
+  <link rel="stylesheet" href="css/modules/base.css">
+  <link rel="stylesheet" href="css/modules/sidebar.css">
+  <link rel="stylesheet" href="css/modules/dashboard.css">
+  <link rel="stylesheet" href="css/modules/focus_mode.css">
+  <link rel="stylesheet" href="css/modules/engines.css">
+  <link rel="stylesheet" href="css/modules/matrix.css">
+  <link rel="stylesheet" href="css/modules/responsive_core.css">
+  <link rel="stylesheet" href="css/modules/report.css">
+  <link rel="stylesheet" href="css/modules/command_palette.css">
+  <link rel="stylesheet" href="css/modules/kanban.css">
+  <link rel="stylesheet" href="css/modules/analytics.css">
+  <link rel="stylesheet" href="css/modules/mobile_suite.css">
+  <link rel="stylesheet" href="css/modules/backlogs_docket.css">
+  <link rel="stylesheet" href="css/modules/pulse.css">
+  <link rel="stylesheet" href="css/modules/professional.css">
+  <link rel="stylesheet" href="css/modules/tracker.css">
+  <link rel="stylesheet" href="css/modules/themes_light.css">
 </head>
 <body class="login-body">
   <div class="login-ambient-glow"></div>
@@ -79,7 +97,6 @@
         <div class="login-remember-row">
           <label class="login-checkbox-label">
             <input type="checkbox" id="setup-remember-me" checked>
-            <span class="custom-checkbox"></span>
             <span>Remember me on this device (30 Days)</span>
           </label>
         </div>
@@ -119,9 +136,11 @@
         <div class="login-remember-row">
           <label class="login-checkbox-label">
             <input type="checkbox" id="login-remember-me" checked>
-            <span class="custom-checkbox"></span>
-            <span>Remember me on this device (30 Days)</span>
+            <span>Remember me</span>
           </label>
+          <button type="button" class="login-forgot-btn" onclick="handleForgotPassword()" title="Reset Master Password">
+            Forgot Password?
+          </button>
         </div>
 
         <button type="submit" class="btn btn-primary login-submit-btn" id="btn-login-submit">
@@ -129,12 +148,6 @@
           <span>Unlock Executive OS</span>
         </button>
       </form>
-
-      <!-- Security Badge Footer -->
-      <div class="login-card-footer">
-        <i data-lucide="shield"></i>
-        <span>Zero-Knowledge PBKDF2 Cryptographic Gateway</span>
-      </div>
     </div>
   </div>
 
@@ -262,6 +275,37 @@
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="unlock"></i><span>Unlock Executive OS</span>';
         if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }
+
+    function handleForgotPassword() {
+      const confirmReset = confirm(
+        "Forgot your Master Password?\n\n" +
+        "Click OK to reset your login credentials and create a new Master Key.\n\n" +
+        "NOTE: All your tasks, habits, pulses, routines, and data will remain 100% safe and intact."
+      );
+
+      if (confirmReset) {
+        if (typeof AuthEngine !== 'undefined' && typeof AuthEngine.resetMaster === 'function') {
+          AuthEngine.resetMaster();
+        } else {
+          localStorage.removeItem('tesseract_auth_master');
+          localStorage.removeItem('tesseract_auth_session');
+          sessionStorage.removeItem('tesseract_auth_temp_session');
+        }
+
+        const setupForm = document.getElementById('setup-form');
+        const loginForm = document.getElementById('login-form');
+        if (setupForm && loginForm) {
+          loginForm.style.display = 'none';
+          setupForm.style.display = 'flex';
+          showAlert('Master key reset. Enter your username and set a new password.', false);
+          const setupUserInput = document.getElementById('setup-username');
+          if (setupUserInput) setupUserInput.focus();
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        } else {
+          location.reload();
+        }
       }
     }
   </script>
